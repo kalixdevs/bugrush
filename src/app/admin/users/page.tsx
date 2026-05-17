@@ -13,6 +13,7 @@ export default async function AdminUsersPage() {
       select: {
         id: true, handle: true, name: true, email: true,
         role: true, points: true, rankPoints: true, createdAt: true,
+        chatMutedUntil: true,
       },
     }),
     prisma.cosmetic.findMany({
@@ -29,7 +30,11 @@ export default async function AdminUsersPage() {
         <h1 className="font-pixel text-3xl mt-2">USERS</h1>
       </div>
       <UserAdminPanel
-        initialUsers={users.map((u) => ({ ...u, createdAt: u.createdAt.toISOString() }))}
+        initialUsers={users.map((u) => ({
+          ...u,
+          createdAt: u.createdAt.toISOString(),
+          chatMutedUntil: u.chatMutedUntil ? u.chatMutedUntil.toISOString() : null,
+        }))}
         cosmetics={cosmetics}
         selfId={admin!.id}
       />

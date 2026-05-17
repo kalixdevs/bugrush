@@ -12,7 +12,16 @@ type UserRow = {
   points: number;
   rankPoints: number;
   createdAt: string;
+  chatMutedUntil?: string | null;
 };
+
+const MUTE_OPTIONS: Array<{ label: string; minutes: number }> = [
+  { label: "5m", minutes: 5 },
+  { label: "30m", minutes: 30 },
+  { label: "1h", minutes: 60 },
+  { label: "1d", minutes: 60 * 24 },
+  { label: "PERM", minutes: 99 * 365 * 24 * 60 },
+];
 
 type CosmeticOpt = { id: string; name: string; rarity: string };
 
@@ -120,6 +129,34 @@ function UserDrawer({
           >
             ▶ APPLY
           </button>
+        </div>
+
+        <div className="border-2 border-zinc-800 p-3 space-y-2 col-span-2">
+          <div className="font-pixel text-[10px] text-zinc-400 tracking-widest">CHAT MUTE</div>
+          <div className="text-xs font-mono text-zinc-300">
+            {user.chatMutedUntil && new Date(user.chatMutedUntil) > new Date()
+              ? `Muted until ${new Date(user.chatMutedUntil).toLocaleString()}`
+              : "Not muted"}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {MUTE_OPTIONS.map((o) => (
+              <button
+                key={o.label}
+                disabled={busy}
+                onClick={() => call(`/api/admin/users/${user.id}/mute`, { minutes: o.minutes })}
+                className="px-3 py-1 border-2 border-fuchsia-500 text-fuchsia-300 font-pixel text-[10px] hover:bg-fuchsia-500/10"
+              >
+                MUTE {o.label}
+              </button>
+            ))}
+            <button
+              disabled={busy}
+              onClick={() => call(`/api/admin/users/${user.id}/mute`, { minutes: null })}
+              className="px-3 py-1 border-2 border-zinc-700 text-zinc-300 font-pixel text-[10px] hover:border-zinc-500"
+            >
+              UNMUTE
+            </button>
+          </div>
         </div>
       </div>
     </div>

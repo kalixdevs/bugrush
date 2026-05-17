@@ -8,9 +8,16 @@ import { publish } from "@/lib/realtime";
 const Body = z.object({ body: z.string().min(1).max(280) });
 
 const rateLimit = new Map<string, number>();
-const COOLDOWN_MS = 10_000;
+const DEFAULT_COOLDOWN_MS = 10_000;
 
 const BANNED = ["slur1", "slur2"]; // intentionally minimal; expand later
+
+async function getCooldownMs(): Promise<number> {
+  const row = await prisma.setting.findUnique({ where: { key: "chat.slowMode" } });
+  const secs = row ? Number(row.value) : NaN;
+  if (!isFinite(secs) || secs < 0) return DEFAULT_COOLDOWN_MS;
+  return secs * 1000;
+}
 
 export async function POST(req: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -19,10 +26,11 @@ export async function POST(req: Request) {
   }
 
   const now = Date.now();
+  const cooldownMs = await getCooldownMs();
   const last = rateLimit.get(session.user.id) ?? 0;
-  if (now - last < COOLDOWN_MS) {
+  if (cooldownMs > 0 && now - last < cooldownMs) {
     return NextResponse.json(
-      { error: "slow down", retryInMs: COOLDOWN_MS - (now - last) },
+      { error: "slow down", retryInMs: cooldownMs - (now - last) },
       { status: 429 },
     );
   }
@@ -44,12 +52,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "blocked" }, { status: 400 });
   }
 
-  rateLimit.set(session.user.id, now);
-
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { name: true, handle: true, image: true },
+    select: { name: true, handle: true, image: true, role: true, chatMutedUntil: true },
   });
+
+  if (user?.chatMutedUntil && user.chatMutedUntil.getTime() > now) {
+    return NextResponse.json(
+      { error: "muted", until: user.chatMutedUntil.toISOString() },
+      { status: 403 },
+    );
+  }
+
+  rateLimit.set(session.user.id, now);
 
   // Detect a match link and attach metadata so clients render a chip.
   const matchIdMatch = text.match(/\/match\/([a-z0-9]{20,})/i);
@@ -87,6 +102,7 @@ export async function POST(req: Request) {
     name: user?.name ?? user?.handle ?? "anon",
     handle: user?.handle ?? null,
     image: user?.image ?? null,
+    senderRole: user?.role ?? "user",
     chatKind: "text",
     body: text,
     meta,

@@ -22,6 +22,7 @@ export async function GET(req: Request) {
     select: {
       id: true, handle: true, name: true, email: true,
       role: true, points: true, rankPoints: true, createdAt: true,
+      chatMutedUntil: true,
     },
   });
   return NextResponse.json({ users });

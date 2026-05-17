@@ -21,6 +21,7 @@ type Msg = {
   name: string;
   handle: string | null;
   image: string | null;
+  senderRole?: string;
   chatKind: string;
   body: string;
   meta?: MatchMeta | Record<string, unknown> | null;
@@ -55,7 +56,18 @@ export default function ChatDock() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Fetch viewer role once we know they're logged in.
+  useEffect(() => {
+    if (!loggedIn) return;
+    let cancelled = false;
+    fetch("/api/me/role").then((r) => r.json()).then((j) => {
+      if (!cancelled) setIsAdmin(j.role === "admin");
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [loggedIn]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -113,15 +125,19 @@ export default function ChatDock() {
     return () => { cancelled = true; if (timer) clearTimeout(timer); };
   }, []);
 
-  // Realtime appends.
+  // Realtime appends + delete + clear handling.
   useEffect(() => {
     return rt.subscribe((payload: unknown) => {
-      const p = payload as Partial<Msg> & { kind?: string };
+      const p = payload as Partial<Msg> & { kind?: string; type?: string };
       if (p.kind === "message" && p.id) {
         setMessages((prev) => {
           if (prev.some((m) => m.id === p.id)) return prev;
           return [...prev, p as Msg].slice(-200);
         });
+      } else if (p.type === "message-deleted" && p.id) {
+        setMessages((prev) => prev.filter((m) => m.id !== p.id));
+      } else if (p.type === "chat-cleared") {
+        setMessages([]);
       }
     });
   }, [rt]);
@@ -143,7 +159,13 @@ export default function ChatDock() {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({ error: "failed" }));
-        setErr(j.error ?? "failed");
+        if (j.error === "muted" && j.until) {
+          setErr(`muted until ${new Date(j.until).toLocaleString()}`);
+        } else if (j.error === "slow down" && typeof j.retryInMs === "number") {
+          setErr(`slow mode: ${Math.ceil(j.retryInMs / 1000)}s left`);
+        } else {
+          setErr(j.error ?? "failed");
+        }
         setBusy(false);
         return;
       }
@@ -208,7 +230,7 @@ export default function ChatDock() {
           </div>
         )}
         {messages.map((m) => (
-          <Message key={m.id} m={m} />
+          <Message key={m.id} m={m} isAdmin={isAdmin} />
         ))}
         <div ref={bottomRef} />
       </div>
@@ -263,21 +285,48 @@ function isMatchMeta(meta: unknown): meta is MatchMeta {
   return typeof m.matchId === "string" && typeof m.mode === "string";
 }
 
-function Message({ m }: { m: Msg }) {
+const MUTE_OPTIONS: Array<{ label: string; minutes: number }> = [
+  { label: "5m", minutes: 5 },
+  { label: "30m", minutes: 30 },
+  { label: "1h", minutes: 60 },
+  { label: "1d", minutes: 60 * 24 },
+  { label: "PERM", minutes: 99 * 365 * 24 * 60 },
+];
+
+function Message({ m, isAdmin }: { m: Msg; isAdmin: boolean }) {
   const isAchievement = m.chatKind === "achievement";
   const matchMeta = isMatchMeta(m.meta) ? m.meta : null;
   const time = fmtTime(m.createdAt);
+  const isSenderAdmin = m.senderRole === "admin";
+  const [showMute, setShowMute] = useState(false);
+
+  const deleteMsg = async () => {
+    await fetch(`/api/admin/chat/${m.id}`, { method: "DELETE" });
+  };
+  const muteUser = async (minutes: number | null) => {
+    setShowMute(false);
+    await fetch(`/api/admin/users/${m.userId}/mute`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ minutes }),
+    });
+  };
 
   return (
-    <div className="flex gap-2.5">
+    <div className="group flex gap-2.5 relative">
       <div className="flex-shrink-0">
         <Avatar src={m.image} name={m.name} size={32} />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2 mb-0.5">
-          <span className={`text-sm font-semibold truncate ${isAchievement ? "text-amber-300" : "text-zinc-100"}`}>
+          <span className={`text-sm font-semibold truncate ${isAchievement ? "text-amber-300" : isSenderAdmin ? "text-amber-300" : "text-zinc-100"}`}>
             {m.name}
           </span>
+          {isSenderAdmin && (
+            <span className="font-pixel text-[8px] tracking-widest px-1.5 py-0.5 border-2 border-amber-400 text-amber-300 leading-none">
+              ADMIN
+            </span>
+          )}
           <span className="text-[10px] text-zinc-500 font-mono ml-auto flex-shrink-0">{time}</span>
         </div>
         {matchMeta ? (
@@ -293,6 +342,46 @@ function Message({ m }: { m: Msg }) {
           </div>
         )}
       </div>
+
+      {isAdmin && (
+        <div className="absolute top-0 right-0 flex gap-1 opacity-0 group-hover:opacity-100 transition bg-zinc-950/90 px-1">
+          <button
+            onClick={deleteMsg}
+            className="text-fuchsia-400 hover:text-fuchsia-300 text-xs px-1"
+            title="Delete message"
+          >
+            ✕
+          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowMute((v) => !v)}
+              className="text-amber-400 hover:text-amber-300 text-xs px-1"
+              title="Mute user"
+            >
+              ⏱
+            </button>
+            {showMute && (
+              <div className="absolute right-0 top-5 z-10 border-2 border-zinc-700 bg-zinc-950 p-1 flex flex-col gap-1 min-w-[80px]">
+                {MUTE_OPTIONS.map((o) => (
+                  <button
+                    key={o.label}
+                    onClick={() => muteUser(o.minutes)}
+                    className="font-pixel text-[10px] text-fuchsia-300 hover:bg-fuchsia-500/10 px-2 py-1 text-left"
+                  >
+                    {o.label}
+                  </button>
+                ))}
+                <button
+                  onClick={() => muteUser(null)}
+                  className="font-pixel text-[10px] text-zinc-400 hover:bg-zinc-800 px-2 py-1 text-left border-t border-zinc-800"
+                >
+                  UNMUTE
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

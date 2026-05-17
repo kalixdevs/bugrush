@@ -20,6 +20,7 @@ model User {
   rankPoints    Int       @default(0)
   role          String    @default("user")
   showcaseBadgeId String?
+  chatMutedUntil DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]

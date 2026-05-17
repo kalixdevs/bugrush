@@ -7,7 +7,7 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
     take: 30,
     include: {
-      user: { select: { name: true, handle: true, image: true } },
+      user: { select: { name: true, handle: true, image: true, role: true } },
     },
   });
 
@@ -18,6 +18,7 @@ export async function GET() {
     name: r.user.name ?? r.user.handle ?? "anon",
     handle: r.user.handle ?? null,
     image: r.user.image ?? null,
+    senderRole: r.user.role ?? "user",
     chatKind: r.kind,
     body: r.body,
     meta: r.meta,
