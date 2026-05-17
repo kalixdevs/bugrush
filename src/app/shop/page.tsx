@@ -1,9 +1,6 @@
-import Link from "next/link";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import AuthNav from "@/components/AuthNav";
-import PointsBadge from "@/components/PointsBadge";
 import CosmeticTile from "@/components/shop/CosmeticTile";
 import type { CosmeticCategory, Rarity } from "@/lib/cosmetics";
 
@@ -51,23 +48,7 @@ export default async function ShopPage() {
   );
 
   return (
-    <div className="min-h-screen text-zinc-100">
-      <nav className="border-b-2 border-zinc-800 bg-zinc-950">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <Link
-            href="/home"
-            className="font-pixel text-xs text-zinc-400 hover:text-indigo-400 transition"
-          >
-            ← HOME
-          </Link>
-          <div className="font-pixel text-xs text-indigo-400 tracking-widest">SHOP</div>
-          <div className="flex items-center gap-5 text-xs font-pixel">
-            {me && <PointsBadge value={me.points} />}
-            <AuthNav />
-          </div>
-        </div>
-      </nav>
-
+    <div className="text-zinc-100">
       <main className="max-w-6xl mx-auto px-6 py-10 space-y-12">
         {SECTIONS.map((s) => {
           const items = cosmetics.filter((c) => c.category === s.id);

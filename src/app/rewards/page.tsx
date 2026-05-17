@@ -4,7 +4,6 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { todayKey } from "@/lib/daily";
-import AuthNav from "@/components/AuthNav";
 import OpenCaseButton from "@/components/rewards/OpenCaseButton";
 import Avatar from "@/components/Avatar";
 import PlayerName from "@/components/PlayerName";
@@ -47,17 +46,7 @@ export default async function RewardsPage() {
   const tone = reward ? RARITY_TONE[reward.rarity] : null;
 
   return (
-    <div className="min-h-screen text-zinc-100">
-      <nav className="border-b-2 border-zinc-800 bg-zinc-950">
-        <div className="max-w-4xl mx-auto px-6 h-14 flex items-center justify-between">
-          <Link href="/home" className="font-pixel text-xs text-zinc-400 hover:text-indigo-400 transition">
-            ← HOME
-          </Link>
-          <div className="font-pixel text-xs text-amber-400 tracking-widest">DAILY REWARDS</div>
-          <AuthNav />
-        </div>
-      </nav>
-
+    <div className="text-zinc-100">
       <main className="max-w-2xl mx-auto px-6 py-16 text-center space-y-8">
         <div className="font-mono text-xs text-indigo-400">{`> ${dayKey}`}</div>
         <h1 className="font-pixel text-3xl sm:text-4xl leading-relaxed">

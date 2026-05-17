@@ -1,9 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import AuthNav from "@/components/AuthNav";
 import AvatarUploader from "@/components/AvatarUploader";
 import ProfileEditor from "@/components/ProfileEditor";
 import PlayerName from "@/components/PlayerName";
@@ -34,15 +32,7 @@ export default async function ProfilePage() {
   const label = user.name ?? user.email.split("@")[0];
 
   return (
-    <div className="min-h-screen text-zinc-100">
-      <nav className="border-b-2 border-zinc-800 px-6 h-14 flex items-center justify-between bg-zinc-950">
-        <Link href="/home" className="font-pixel text-xs text-zinc-400 hover:text-indigo-400 transition">
-          ← HOME
-        </Link>
-        <div className="font-pixel text-xs text-indigo-400 tracking-widest">PROFILE</div>
-        <AuthNav />
-      </nav>
-
+    <div className="text-zinc-100">
       <main className="max-w-4xl mx-auto px-6 py-10 space-y-8">
         <section className="border-2 border-zinc-800 bg-zinc-900 p-6">
           <div className="font-pixel text-xs text-indigo-400 mb-4">PLAYER</div>

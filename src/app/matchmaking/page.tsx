@@ -2,7 +2,6 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import AuthNav from "@/components/AuthNav";
 import MatchRow from "@/components/match/MatchRow";
 import { isMatchExpired } from "@/lib/match";
 
@@ -31,17 +30,7 @@ export default async function MatchmakingPage() {
   const matches = rows.filter((m) => !isMatchExpired(m));
 
   return (
-    <div className="min-h-screen text-zinc-100 relative z-10">
-      <nav className="border-b-2 border-zinc-800 bg-zinc-950">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <Link href="/home" className="font-pixel text-xs text-zinc-400 hover:text-indigo-400 transition">
-            ← HOME
-          </Link>
-          <div className="font-pixel text-xs text-indigo-400 tracking-widest">MATCHMAKING</div>
-          <AuthNav />
-        </div>
-      </nav>
-
+    <div className="text-zinc-100 relative z-10">
       <main className="max-w-6xl mx-auto px-6 py-10 space-y-6">
         <div className="flex items-center justify-between">
           <div>

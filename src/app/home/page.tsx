@@ -5,8 +5,6 @@ import { prisma } from "@/lib/db";
 import { todayKey } from "@/lib/daily";
 import { rankFor } from "@/lib/ranks";
 import { BADGES } from "@/lib/badges";
-import AuthNav from "@/components/AuthNav";
-import PointsBadge from "@/components/PointsBadge";
 
 export const metadata = { title: "Home — Bugrush" };
 
@@ -38,13 +36,10 @@ export default async function HomePage() {
   ]);
 
   const displayName = me?.name ?? me?.handle ?? "stranger";
-  const points = me?.points ?? 0;
   const rank = rankFor(me?.rankPoints ?? 0);
 
   return (
     <div className="h-full text-zinc-100 flex flex-col relative z-10 overflow-hidden">
-      <TopStrip points={points} loggedIn={!!userId} />
-
       <div className="flex flex-1 min-h-0">
         <main className="flex-1 px-6 py-4 overflow-hidden">
           <div className="max-w-5xl mx-auto space-y-5">
@@ -113,32 +108,6 @@ export default async function HomePage() {
         </div>
       </footer>
     </div>
-  );
-}
-
-function TopStrip({ points, loggedIn }: { points: number; loggedIn: boolean }) {
-  return (
-    <nav className="border-b-2 border-zinc-800 bg-zinc-950">
-      <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-        <Link href="/home" className="font-pixel text-indigo-400 text-xs tracking-widest">
-          BUGRUSH
-        </Link>
-        <div className="flex items-center gap-4 text-xs">
-          {loggedIn && <PointsBadge value={points} />}
-          <div className="flex items-center">
-            <Link href="/leaderboard" title="Leaderboard" className="opacity-80 hover:opacity-100 transition flex items-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icons/trophy.svg" alt="Leaderboard" className="h-8 w-auto -mx-2" />
-            </Link>
-            <Link href="/daily" title="Daily challenge" className="opacity-80 hover:opacity-100 transition flex items-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icons/dailychallange.svg" alt="Daily" className="h-8 w-auto -mx-2" />
-            </Link>
-          </div>
-          <AuthNav />
-        </div>
-      </div>
-    </nav>
   );
 }
 

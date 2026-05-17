@@ -3,7 +3,6 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { todayKey } from "@/lib/daily";
-import AuthNav from "@/components/AuthNav";
 import Avatar from "@/components/Avatar";
 import ShareDailyButton from "@/components/ShareDailyButton";
 
@@ -36,18 +35,7 @@ export default async function DailyPage() {
   ]);
 
   return (
-    <div className="min-h-screen text-zinc-100">
-      <nav className="border-b-2 border-zinc-800 px-6 h-14 flex items-center justify-between bg-zinc-950">
-        <Link
-          href="/home"
-          className="font-pixel text-xs text-zinc-400 hover:text-indigo-400 transition"
-        >
-          ← HOME
-        </Link>
-        <div className="font-pixel text-xs text-amber-400 tracking-widest">DAILY</div>
-        <AuthNav />
-      </nav>
-
+    <div className="text-zinc-100">
       <main className="max-w-3xl mx-auto px-6 py-12 space-y-10">
         <section className="text-center">
           <div className="font-mono text-xs text-indigo-400 mb-3">{`> ${dayKey}`}</div>
