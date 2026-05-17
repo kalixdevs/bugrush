@@ -3,6 +3,11 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./db";
 import { generateUniqueHandle } from "./handle";
 
+const trustedOrigins = [
+  process.env.BETTER_AUTH_URL,
+  "http://localhost:3000",
+].filter((u): u is string => !!u);
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   emailAndPassword: {
@@ -11,6 +16,7 @@ export const auth = betterAuth({
   },
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,
+  trustedOrigins,
   databaseHooks: {
     user: {
       create: {
