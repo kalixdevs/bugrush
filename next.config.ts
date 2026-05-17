@@ -1,13 +1,18 @@
 import type { NextConfig } from "next";
 
+// Monaco loads its loader + workers from jsDelivr by default.
+const MONACO_CDN = "https://cdn.jsdelivr.net";
+
 const csp = [
   "default-src 'self'",
-  "img-src 'self' data: https://*.public.blob.vercel-storage.com",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' data: https://fonts.gstatic.com",
-  "connect-src 'self' https://*.upstash.io https://*.public.blob.vercel-storage.com",
-  "worker-src 'self' blob:",
+  `img-src 'self' data: https://*.public.blob.vercel-storage.com`,
+  `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${MONACO_CDN}`,
+  `script-src-elem 'self' 'unsafe-inline' ${MONACO_CDN}`,
+  `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com ${MONACO_CDN}`,
+  `style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com ${MONACO_CDN}`,
+  `font-src 'self' data: https://fonts.gstatic.com ${MONACO_CDN}`,
+  `connect-src 'self' https://*.upstash.io https://*.public.blob.vercel-storage.com ${MONACO_CDN}`,
+  `worker-src 'self' blob: ${MONACO_CDN}`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
