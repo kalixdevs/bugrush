@@ -75,8 +75,8 @@ export default function Game() {
       : endReason === "hardcore-fail" ? "text-fuchsia-500"
       : "text-zinc-400";
     return (
-      <div className="min-h-screen grid place-items-center text-zinc-100">
-        <div className="text-center px-6 max-w-md border-2 border-zinc-800 bg-zinc-900 py-10">
+      <div className="min-h-screen grid place-items-center text-zinc-100 py-8">
+        <div className="text-center px-6 max-w-2xl border-2 border-zinc-800 bg-zinc-900 py-10">
           <div className={`font-pixel text-base sm:text-lg mb-6 leading-relaxed ${headlineColor}`}>
             {headline}
           </div>
@@ -88,10 +88,37 @@ export default function Game() {
               : ""}
           </div>
           {endReason === "hardcore-fail" && failedOn && (
-            <div className="text-sm text-fuchsia-300 mb-2">
+            <div className="text-sm text-fuchsia-300 mb-4">
               Got you: <span className="font-mono">{failedOn.title}</span>
             </div>
           )}
+
+          {(() => {
+            const showBug = failedOn ?? (endReason === "time" || endReason === "hardcore-fail" ? current : null);
+            if (!showBug) return null;
+            return (
+              <div className="mt-6 mb-2 text-left">
+                <div className="font-pixel text-[10px] tracking-widest text-zinc-500 mb-2">
+                  THE BUG · <span className="text-zinc-400">{showBug.title}</span>
+                </div>
+                <p className="text-xs text-zinc-500 mb-3 font-mono">{showBug.hint}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <div className="font-pixel text-[9px] tracking-widest text-fuchsia-400 mb-1">BROKEN</div>
+                    <pre className="border-2 border-fuchsia-500/40 bg-zinc-950 p-3 text-[11px] leading-snug font-mono text-zinc-200 overflow-x-auto whitespace-pre">
+{showBug.broken}
+                    </pre>
+                  </div>
+                  <div>
+                    <div className="font-pixel text-[9px] tracking-widest text-emerald-400 mb-1">FIX</div>
+                    <pre className="border-2 border-emerald-500/40 bg-zinc-950 p-3 text-[11px] leading-snug font-mono text-zinc-200 overflow-x-auto whitespace-pre">
+{showBug.solution}
+                    </pre>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {session?.user ? (
             <div className="text-sm text-zinc-400 mt-3">
