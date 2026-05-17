@@ -108,11 +108,8 @@ export default async function HomePage() {
       </div>
 
       <footer className="border-t-2 border-zinc-800">
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between font-pixel text-[10px] text-zinc-500">
+        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center font-pixel text-[10px] text-zinc-500">
           <div>© {new Date().getFullYear()} BUGRUSH</div>
-          <Link href="/?welcome=1" className="hover:text-indigo-400 transition">
-            WHAT IS THIS? →
-          </Link>
         </div>
       </footer>
     </div>
