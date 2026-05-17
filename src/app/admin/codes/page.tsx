@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import CodeAdminPanel from "@/components/admin/CodeAdminPanel";
 
-export const metadata = { title: "Admin · Codes — Devrace" };
+export const metadata = { title: "Admin · Codes — Bugrush" };
 
 export default async function AdminCodesPage() {
   const [codes, cosmetics] = await Promise.all([

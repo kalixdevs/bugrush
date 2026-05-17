@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import EventAdminPanel from "@/components/admin/EventAdminPanel";
 
-export const metadata = { title: "Admin · Events — Devrace" };
+export const metadata = { title: "Admin · Events — Bugrush" };
 
 export default async function AdminEventsPage() {
   const [events, cosmetics] = await Promise.all([

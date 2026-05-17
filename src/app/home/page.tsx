@@ -10,7 +10,7 @@ import ChatSidebar from "@/components/ChatSidebar";
 import PointsBadge from "@/components/PointsBadge";
 import EventBanner from "@/components/EventBanner";
 
-export const metadata = { title: "Home — Devrace" };
+export const metadata = { title: "Home — Bugrush" };
 
 export default async function HomePage() {
   const dayKey = todayKey();
@@ -116,7 +116,7 @@ export default async function HomePage() {
 
       <footer className="border-t-2 border-zinc-800">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between font-pixel text-[10px] text-zinc-500">
-          <div>© {new Date().getFullYear()} DEVRACE</div>
+          <div>© {new Date().getFullYear()} BUGRUSH</div>
           <Link href="/?welcome=1" className="hover:text-indigo-400 transition">
             WHAT IS THIS? →
           </Link>
@@ -131,7 +131,7 @@ function TopStrip({ points, loggedIn }: { points: number; loggedIn: boolean }) {
     <nav className="border-b-2 border-zinc-800 bg-zinc-950">
       <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
         <Link href="/home" className="font-pixel text-indigo-400 text-xs tracking-widest">
-          DEVRACE
+          BUGRUSH
         </Link>
         <div className="flex items-center gap-5 text-xs font-pixel">
           {loggedIn && <PointsBadge value={points} />}

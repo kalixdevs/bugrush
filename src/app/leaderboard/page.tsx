@@ -2,7 +2,7 @@ import Link from "next/link";
 import AuthNav from "@/components/AuthNav";
 import Leaderboard from "@/components/Leaderboard";
 
-export const metadata = { title: "Leaderboard — Devrace" };
+export const metadata = { title: "Leaderboard — Bugrush" };
 
 const VALID_BOARDS = ["easy", "normal", "hard", "hardcore"] as const;
 type Board = (typeof VALID_BOARDS)[number];

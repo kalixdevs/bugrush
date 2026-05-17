@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import CosmeticAdminPanel from "@/components/admin/CosmeticAdminPanel";
 
-export const metadata = { title: "Admin · Cosmetics — Devrace" };
+export const metadata = { title: "Admin · Cosmetics — Bugrush" };
 
 export default async function AdminCosmeticsPage() {
   const cosmetics = await prisma.cosmetic.findMany({

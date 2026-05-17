@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import AuthNav from "@/components/AuthNav";
 import RedeemForm from "@/components/redeem/RedeemForm";
 
-export const metadata = { title: "Redeem — Devrace" };
+export const metadata = { title: "Redeem — Bugrush" };
 
 export default async function RedeemPage() {
   const session = await auth.api.getSession({ headers: await headers() });

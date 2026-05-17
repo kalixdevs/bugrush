@@ -9,7 +9,7 @@ import OpenCaseButton from "@/components/rewards/OpenCaseButton";
 import Avatar from "@/components/Avatar";
 import PlayerName from "@/components/PlayerName";
 
-export const metadata = { title: "Daily Rewards — Devrace" };
+export const metadata = { title: "Daily Rewards — Bugrush" };
 
 const RARITY_TONE: Record<string, { border: string; text: string; label: string }> = {
   common:    { border: "border-zinc-600",    text: "text-zinc-300",    label: "COMMON" },

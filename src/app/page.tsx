@@ -41,7 +41,7 @@ function Nav() {
           href="/"
           className="font-pixel text-indigo-400 text-xs tracking-widest"
         >
-          DEVRACE
+          BUGRUSH
         </Link>
         <div className="flex items-center gap-6 text-xs font-pixel">
           <a href="#modes" className="text-zinc-400 hover:text-indigo-400 transition">MODES</a>
@@ -243,7 +243,7 @@ function Footer() {
   return (
     <footer className="border-t-2 border-zinc-800">
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between font-pixel text-[10px] text-zinc-500">
-        <div>© {new Date().getFullYear()} DEVRACE</div>
+        <div>© {new Date().getFullYear()} BUGRUSH</div>
         <div className="flex gap-5">
           <a href="#" className="hover:text-indigo-400 transition">TWITTER</a>
           <a href="#" className="hover:text-indigo-400 transition">DISCORD</a>

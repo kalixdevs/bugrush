@@ -6,7 +6,7 @@ import AuthNav from "@/components/AuthNav";
 import MatchRow from "@/components/match/MatchRow";
 import { isMatchExpired } from "@/lib/match";
 
-export const metadata = { title: "Matchmaking — Devrace" };
+export const metadata = { title: "Matchmaking — Bugrush" };
 
 export default async function MatchmakingPage() {
   const session = await auth.api.getSession({ headers: await headers() });

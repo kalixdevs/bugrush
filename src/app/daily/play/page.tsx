@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { getDailyChallenge, todayKey } from "@/lib/daily";
 import DailyGame from "@/components/DailyGame";
 
-export const metadata = { title: "Today's Bug — Devrace" };
+export const metadata = { title: "Today's Bug — Bugrush" };
 
 export default async function DailyPlayPage() {
   const session = await auth.api.getSession({ headers: await headers() });

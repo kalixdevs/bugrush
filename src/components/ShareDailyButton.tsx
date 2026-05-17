@@ -10,11 +10,11 @@ type Props = {
 };
 
 function buildShareText({ dayKey, success, timeMs, score }: Props): string {
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://devrace.dev";
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://bugrush.lol";
   const line2 = success
     ? `✅ ${(timeMs / 1000).toFixed(1)}s · ${score} pts`
     : `❌ missed`;
-  return `devrace daily ${dayKey}\n${line2}\n${origin}/daily`;
+  return `bugrush daily ${dayKey}\n${line2}\n${origin}/daily`;
 }
 
 export default function ShareDailyButton(props: Props) {

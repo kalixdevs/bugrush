@@ -7,7 +7,7 @@ import PlayerName from "@/components/PlayerName";
 import PlayerProfile, { getProfileData } from "@/components/profile/PlayerProfile";
 import { getEquippedForUser } from "@/lib/cosmetics";
 
-export const metadata = { title: "Player — Devrace" };
+export const metadata = { title: "Player — Bugrush" };
 
 export default async function PublicProfilePage({
   params,

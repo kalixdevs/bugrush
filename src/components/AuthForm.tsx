@@ -66,7 +66,7 @@ export default function AuthForm({ mode }: Props) {
             href="/home"
             className="inline-block font-pixel text-xs text-indigo-400 tracking-widest"
           >
-            DEVRACE
+            BUGRUSH
           </Link>
           <h1 className="font-pixel text-lg mt-5">{title}</h1>
           <p className="text-sm text-zinc-400 mt-3">

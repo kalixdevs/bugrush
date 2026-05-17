@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/adminGate";
 import UserAdminPanel from "@/components/admin/UserAdminPanel";
 
-export const metadata = { title: "Admin · Users — Devrace" };
+export const metadata = { title: "Admin · Users — Bugrush" };
 
 export default async function AdminUsersPage() {
   const admin = await requireAdmin();

@@ -51,21 +51,32 @@ export async function POST(req: Request) {
   }
 
   const userId = session.user.id;
-  await deleteExisting(userId);
 
-  const filename = `${PREFIX}${userId}.${ext}`;
-  const blob = await put(filename, file, {
-    access: "public",
-    contentType: file.type,
-    addRandomSuffix: true,
-  });
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return NextResponse.json(
+      { error: "blob storage not configured (BLOB_READ_WRITE_TOKEN missing)" },
+      { status: 500 },
+    );
+  }
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: { image: blob.url },
-  });
-
-  return NextResponse.json({ url: blob.url });
+  try {
+    await deleteExisting(userId);
+    const filename = `${PREFIX}${userId}.${ext}`;
+    const blob = await put(filename, file, {
+      access: "public",
+      contentType: file.type,
+      addRandomSuffix: true,
+    });
+    await prisma.user.update({
+      where: { id: userId },
+      data: { image: blob.url },
+    });
+    return NextResponse.json({ url: blob.url });
+  } catch (e) {
+    console.error("avatar upload failed", e);
+    const msg = e instanceof Error ? e.message : "upload failed";
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }
 
 export async function DELETE() {

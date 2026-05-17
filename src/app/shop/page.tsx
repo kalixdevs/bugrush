@@ -7,7 +7,7 @@ import PointsBadge from "@/components/PointsBadge";
 import CosmeticTile from "@/components/shop/CosmeticTile";
 import type { CosmeticCategory, Rarity } from "@/lib/cosmetics";
 
-export const metadata = { title: "Shop — Devrace" };
+export const metadata = { title: "Shop — Bugrush" };
 
 const SECTIONS: Array<{ id: CosmeticCategory; title: string }> = [
   { id: "frame",       title: "FRAMES" },

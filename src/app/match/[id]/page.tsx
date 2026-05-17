@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import AuthNav from "@/components/AuthNav";
 import MatchView from "@/components/match/MatchView";
 
-export const metadata = { title: "Match — Devrace" };
+export const metadata = { title: "Match — Bugrush" };
 
 export default async function MatchPage({
   params,

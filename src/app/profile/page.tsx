@@ -10,7 +10,7 @@ import PlayerName from "@/components/PlayerName";
 import PlayerProfile, { getProfileData } from "@/components/profile/PlayerProfile";
 import { getEquippedForUser } from "@/lib/cosmetics";
 
-export const metadata = { title: "Profile — Devrace" };
+export const metadata = { title: "Profile — Bugrush" };
 
 export default async function ProfilePage() {
   const session = await auth.api.getSession({ headers: await headers() });

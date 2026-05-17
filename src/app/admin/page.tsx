@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getActiveEvent } from "@/lib/events";
 
-export const metadata = { title: "Admin · Dashboard — Devrace" };
+export const metadata = { title: "Admin · Dashboard — Bugrush" };
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (

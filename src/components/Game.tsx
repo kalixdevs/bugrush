@@ -148,7 +148,7 @@ export default function Game() {
     <div className="h-screen bg-zinc-950 text-zinc-100 flex flex-col">
       <header className="border-b-2 border-zinc-800 px-6 py-3 flex items-center justify-between bg-zinc-950">
         <div className="flex items-center gap-6">
-          <div className="font-pixel text-xs text-indigo-400 tracking-widest">DEVRACE</div>
+          <div className="font-pixel text-xs text-indigo-400 tracking-widest">BUGRUSH</div>
           <div className="font-pixel text-[10px] text-zinc-500">
             SOLVES{" "}
             <span className="text-zinc-200 font-mono tabular-nums">

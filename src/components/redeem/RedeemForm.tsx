@@ -52,7 +52,7 @@ export default function RedeemForm() {
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           maxLength={40}
           className="w-full px-3 py-2 bg-zinc-950 border-2 border-zinc-800 text-zinc-100 font-mono uppercase tracking-widest focus:outline-none focus:border-indigo-500 transition"
-          placeholder="DEVRACE2026"
+          placeholder="BUGRUSH2026"
         />
       </label>
 

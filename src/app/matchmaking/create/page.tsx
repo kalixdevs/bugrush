@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import AuthNav from "@/components/AuthNav";
 import CreateMatchForm from "@/components/match/CreateMatchForm";
 
-export const metadata = { title: "Create Match — Devrace" };
+export const metadata = { title: "Create Match — Bugrush" };
 
 export default async function CreateMatchPage() {
   const session = await auth.api.getSession({ headers: await headers() });

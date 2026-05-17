@@ -7,7 +7,7 @@ import AuthNav from "@/components/AuthNav";
 import Avatar from "@/components/Avatar";
 import ShareDailyButton from "@/components/ShareDailyButton";
 
-export const metadata = { title: "Daily — Devrace" };
+export const metadata = { title: "Daily — Bugrush" };
 
 export default async function DailyPage() {
   const dayKey = todayKey();

@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/adminGate";
 import AuthNav from "@/components/AuthNav";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 
-export const metadata = { title: "Admin — Devrace" };
+export const metadata = { title: "Admin — Bugrush" };
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const admin = await requireAdmin();
@@ -17,7 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/home" className="font-pixel text-xs text-zinc-400 hover:text-indigo-400 transition">
             ← HOME
           </Link>
-          <div className="font-pixel text-xs text-indigo-400 tracking-widest">DEVRACE ADMIN</div>
+          <div className="font-pixel text-xs text-indigo-400 tracking-widest">BUGRUSH ADMIN</div>
           <AuthNav />
         </div>
       </nav>

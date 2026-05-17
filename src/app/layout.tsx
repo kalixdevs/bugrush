@@ -22,7 +22,7 @@ const pressStart = Press_Start_2P({
 });
 
 export const metadata: Metadata = {
-  title: "Devrace — Speed Fix",
+  title: "Bugrush — Speed Fix",
   description: "A competitive debugging game. Patch broken code under pressure.",
 };
 
