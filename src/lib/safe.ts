@@ -17,6 +17,7 @@ export function safeImageSrc(url: string | null | undefined): string | null {
       trimmed.startsWith("/cosmetics/") ||
       trimmed.startsWith("/uploads/") ||
       trimmed.startsWith("/badges/") ||
+      trimmed.startsWith("/icons/") ||
       trimmed.startsWith("/points-icon.svg")
     ) {
       return trimmed;

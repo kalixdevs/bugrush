@@ -105,9 +105,11 @@ export default function AuthNav() {
                   await signOut();
                   router.refresh();
                 }}
-                className="w-full text-left px-3 py-2 text-sm text-fuchsia-400 hover:bg-zinc-950 hover:text-fuchsia-300 transition flex items-center gap-2"
+                className="w-full text-left px-3 py-2 text-sm text-fuchsia-400 hover:bg-zinc-950 hover:text-fuchsia-300 transition flex items-center gap-3"
               >
-                <span aria-hidden>↩</span>
+                <span aria-hidden className="w-5 h-5 inline-flex items-center justify-center text-base leading-none flex-shrink-0">
+                  ↩
+                </span>
                 <span>Logout</span>
               </button>
             </div>
@@ -135,9 +137,11 @@ function MenuLink({
       href={href}
       role="menuitem"
       onClick={onClick}
-      className={`px-3 py-2 text-sm flex items-center gap-2 hover:bg-zinc-950 transition ${colorCls}`}
+      className={`px-3 py-2 text-sm flex items-center gap-3 hover:bg-zinc-950 transition ${colorCls}`}
     >
-      <span aria-hidden className="text-base leading-none">{icon}</span>
+      <span aria-hidden className="w-5 h-5 inline-flex items-center justify-center text-base leading-none flex-shrink-0">
+        {icon}
+      </span>
       <span>{label}</span>
     </Link>
   );

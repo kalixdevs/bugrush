@@ -5,8 +5,6 @@ import Link from "next/link";
 import { useRealtime } from "@/lib/realtimeClient";
 import { useSession } from "@/lib/auth-client";
 import Avatar from "./Avatar";
-import BadgeIcon from "./BadgeIcon";
-import { findBadge } from "@/lib/badges";
 
 type MatchMeta = {
   matchId: string;
@@ -318,8 +316,6 @@ function Message({ m, isAdmin }: { m: Msg; isAdmin: boolean }) {
     });
   };
 
-  const showcase = m.senderShowcaseBadgeId ? findBadge(m.senderShowcaseBadgeId) : undefined;
-
   return (
     <div className="group flex gap-2.5 relative">
       <div className="flex-shrink-0">
@@ -327,7 +323,6 @@ function Message({ m, isAdmin }: { m: Msg; isAdmin: boolean }) {
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-          {showcase && <BadgeIcon badge={showcase} size={18} />}
           <span
             className={`text-sm font-semibold truncate ${isSenderAdmin ? "name-admin" : m.senderNameEffect ?? ""} ${
               isAchievement ? "text-amber-300" : isSenderAdmin ? "text-purple-400" : "text-zinc-100"
