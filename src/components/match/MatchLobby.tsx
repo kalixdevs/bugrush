@@ -96,7 +96,7 @@ export default function MatchLobby({ match, viewerId }: Props) {
         </div>
       )}
 
-      {match.privacy === "private" && !isCancelled && (
+      {!isCancelled && (
         <div className="text-center">
           <button
             onClick={copyInvite}

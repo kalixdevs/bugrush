@@ -51,12 +51,32 @@ export async function POST(req: Request) {
     select: { name: true, handle: true, image: true },
   });
 
+  // Detect a match link and attach metadata so clients render a chip.
+  const matchIdMatch = text.match(/\/match\/([a-z0-9]{20,})/i);
+  let meta: Record<string, unknown> | null = null;
+  if (matchIdMatch) {
+    const match = await prisma.match.findUnique({
+      where: { id: matchIdMatch[1] },
+      select: { id: true, mode: true, language: true, difficulty: true, status: true },
+    });
+    if (match && (match.status === "ready" || match.status === "in_progress")) {
+      meta = {
+        matchId: match.id,
+        mode: match.mode,
+        language: match.language,
+        difficulty: match.difficulty,
+        status: match.status,
+      };
+    }
+  }
+
   const row = await prisma.chatMessage.create({
     data: {
       userId: session.user.id,
       channel: "lfm",
       kind: "text",
       body: text,
+      meta: meta === null ? undefined : (meta as never),
     },
   });
 
@@ -69,6 +89,7 @@ export async function POST(req: Request) {
     image: user?.image ?? null,
     chatKind: "text",
     body: text,
+    meta,
     createdAt: row.createdAt.toISOString(),
   };
 

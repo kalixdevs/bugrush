@@ -4,6 +4,7 @@ import "./globals.css";
 import CodeRain from "@/components/CodeRain";
 import { RealtimeProvider } from "@/lib/realtimeClient";
 import AchievementToast from "@/components/AchievementToast";
+import ChatDock from "@/components/ChatDock";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,6 +41,7 @@ export default function RootLayout({
         <CodeRain />
         <RealtimeProvider>
           {children}
+          <ChatDock />
           <AchievementToast />
         </RealtimeProvider>
       </body>

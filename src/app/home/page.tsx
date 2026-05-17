@@ -6,7 +6,6 @@ import { todayKey } from "@/lib/daily";
 import { rankFor } from "@/lib/ranks";
 import { BADGES } from "@/lib/badges";
 import AuthNav from "@/components/AuthNav";
-import ChatSidebar from "@/components/ChatSidebar";
 import PointsBadge from "@/components/PointsBadge";
 import EventBanner from "@/components/EventBanner";
 
@@ -49,10 +48,6 @@ export default async function HomePage() {
       <TopStrip points={points} loggedIn={!!userId} />
 
       <div className="flex flex-1 min-h-0">
-        <aside className="w-80 flex-shrink-0 border-r-2 border-zinc-800 bg-zinc-900 hidden lg:flex flex-col">
-          <ChatSidebar loggedIn={!!userId} />
-        </aside>
-
         <main className="flex-1 px-6 py-10 overflow-y-auto">
           <div className="max-w-5xl mx-auto space-y-8">
             <h1 className="font-pixel text-3xl sm:text-4xl">
