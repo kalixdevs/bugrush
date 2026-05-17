@@ -46,7 +46,11 @@ export default async function ProfilePage() {
       <main className="max-w-4xl mx-auto px-6 py-10 space-y-8">
         <section className="border-2 border-zinc-800 bg-zinc-900 p-6">
           <div className="font-pixel text-xs text-indigo-400 mb-4">PLAYER</div>
-          <AvatarUploader initialSrc={user.image ?? null} name={label} />
+          <AvatarUploader
+            initialSrc={user.image ?? null}
+            name={label}
+            frameSrc={cos.frame?.assetUrl ?? null}
+          />
           <div className="text-3xl font-bold mt-6">
             <PlayerName
               name={label}

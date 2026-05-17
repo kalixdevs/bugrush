@@ -10,12 +10,15 @@ export default function AuthNav() {
   const router = useRouter();
   const { data, isPending } = useSession();
   const [role, setRole] = useState<string | null>(null);
+  const [frameSrc, setFrameSrc] = useState<string | null>(null);
 
   useEffect(() => {
     if (!data?.user) return;
     let cancelled = false;
     fetch("/api/me/role").then((r) => r.json()).then((j) => {
-      if (!cancelled) setRole(j.role ?? null);
+      if (cancelled) return;
+      setRole(j.role ?? null);
+      setFrameSrc(j.frameSrc ?? null);
     }).catch(() => {});
     return () => { cancelled = true; };
   }, [data?.user]);
@@ -38,7 +41,7 @@ export default function AuthNav() {
           href="/profile"
           className="flex items-center gap-2 text-zinc-300 hover:text-indigo-400 transition"
         >
-          <Avatar src={image} name={label} size={24} />
+          <Avatar src={image} name={label} size={24} frameSrc={frameSrc} />
           <span>{label}</span>
         </Link>
         <button

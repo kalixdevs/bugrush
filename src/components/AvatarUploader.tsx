@@ -7,9 +7,10 @@ import Avatar from "./Avatar";
 type Props = {
   initialSrc: string | null;
   name: string;
+  frameSrc?: string | null;
 };
 
-export default function AvatarUploader({ initialSrc, name }: Props) {
+export default function AvatarUploader({ initialSrc, name, frameSrc }: Props) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [src, setSrc] = useState<string | null>(initialSrc);
@@ -70,7 +71,7 @@ export default function AvatarUploader({ initialSrc, name }: Props) {
 
   return (
     <div className="flex items-center gap-5">
-      <Avatar src={src} name={name} size={80} />
+      <Avatar src={src} name={name} size={80} frameSrc={frameSrc} />
       <div className="flex flex-col gap-2">
         <input
           ref={inputRef}
