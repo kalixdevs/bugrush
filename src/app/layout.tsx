@@ -5,6 +5,7 @@ import CodeRain from "@/components/CodeRain";
 import { RealtimeProvider } from "@/lib/realtimeClient";
 import AchievementToast from "@/components/AchievementToast";
 import ChatDock from "@/components/ChatDock";
+import EventBanner from "@/components/EventBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
   description: "A competitive debugging game. Patch broken code under pressure.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -39,6 +40,9 @@ export default function RootLayout({
     >
       <body className="h-full antialiased bg-zinc-950 bg-grid text-zinc-100">
         <CodeRain />
+        <div className="sticky top-0 z-50">
+          <EventBanner />
+        </div>
         <RealtimeProvider>
           {children}
           <ChatDock />

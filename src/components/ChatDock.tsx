@@ -149,7 +149,7 @@ export default function ChatDock() {
   }
 
   return (
-    <aside className="fixed left-0 top-0 bottom-0 z-40 w-80 border-r-2 border-zinc-800 bg-zinc-900 flex flex-col">
+    <aside className="fixed left-3 top-20 bottom-6 z-40 w-72 border-2 border-zinc-800 bg-zinc-900 flex flex-col shadow-xl">
       <div className="px-4 py-3 border-b-2 border-zinc-800 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="font-pixel text-xs text-indigo-400">LIVE CHAT</div>

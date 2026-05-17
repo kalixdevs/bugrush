@@ -7,7 +7,6 @@ import { rankFor } from "@/lib/ranks";
 import { BADGES } from "@/lib/badges";
 import AuthNav from "@/components/AuthNav";
 import PointsBadge from "@/components/PointsBadge";
-import EventBanner from "@/components/EventBanner";
 
 export const metadata = { title: "Home — Bugrush" };
 
@@ -44,7 +43,6 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen text-zinc-100 flex flex-col relative z-10">
-      <EventBanner />
       <TopStrip points={points} loggedIn={!!userId} />
 
       <div className="flex flex-1 min-h-0">

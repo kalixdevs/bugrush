@@ -102,9 +102,10 @@
 
 body.in-round .rain { display: none; }
 
-/* When chat dock is open, shift everything right of it so content isn't covered. */
+/* When chat dock is open, shift everything right of it so content isn't covered.
+   Dock = w-72 (18rem) + left-3 (0.75rem) gap + small right gap = ~19.5rem. */
 @media (min-width: 1024px) {
-  body.chat-open { padding-left: 20rem; }
+  body.chat-open { padding-left: 19.5rem; }
 }
 
 @keyframes toastFade {
