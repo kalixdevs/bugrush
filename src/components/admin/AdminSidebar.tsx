@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/admin/codes", label: "PROMO CODES" },
   { href: "/admin/cosmetics", label: "COSMETICS" },
   { href: "/admin/users", label: "USERS" },
+  { href: "/admin/announcement", label: "ANNOUNCEMENT" },
 ];
 
 export default function AdminSidebar() {

@@ -28,11 +28,19 @@ type Msg = {
 };
 
 const LS_OPEN = "bugrush:chatOpen";
+const ANNOUNCEMENT_POLL_MS = 30_000;
 
 function readInitialOpen(): boolean {
   if (typeof window === "undefined") return true;
   const v = window.localStorage.getItem(LS_OPEN);
   return v === null ? true : v === "1";
+}
+
+function fmtTime(iso: string): string {
+  const d = new Date(iso);
+  const h = String(d.getHours()).padStart(2, "0");
+  const m = String(d.getMinutes()).padStart(2, "0");
+  return `${h}:${m}`;
 }
 
 export default function ChatDock() {
@@ -43,6 +51,7 @@ export default function ChatDock() {
   const [open, setOpen] = useState<boolean>(() => readInitialOpen());
   const [inRound, setInRound] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
+  const [announcement, setAnnouncement] = useState<string>("");
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -84,6 +93,24 @@ export default function ChatDock() {
       } catch { /* ignore */ }
     })();
     return () => { cancelled = true; };
+  }, []);
+
+  // Announcement: fetch initial + poll every 30s.
+  useEffect(() => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const tick = async () => {
+      try {
+        const res = await fetch("/api/announcement", { cache: "no-store" });
+        if (res.ok && !cancelled) {
+          const j = (await res.json()) as { value: string };
+          setAnnouncement(j.value ?? "");
+        }
+      } catch { /* ignore */ }
+      if (!cancelled) timer = setTimeout(tick, ANNOUNCEMENT_POLL_MS);
+    };
+    tick();
+    return () => { cancelled = true; if (timer) clearTimeout(timer); };
   }, []);
 
   // Realtime appends.
@@ -149,10 +176,10 @@ export default function ChatDock() {
   }
 
   return (
-    <aside className="fixed left-0 top-0 bottom-0 z-40 w-80 border-r-2 border-zinc-800 bg-zinc-900 flex flex-col">
+    <aside className="fixed left-0 top-0 bottom-0 z-40 w-72 border-r-2 border-zinc-800 bg-zinc-900 flex flex-col">
       <div className="px-4 py-3 border-b-2 border-zinc-800 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="font-pixel text-xs text-indigo-400">LIVE CHAT</div>
+          <h2 className="font-pixel text-sm text-zinc-100">Chat</h2>
           <div
             className={`w-2 h-2 ${rt.connected ? "bg-indigo-400" : "bg-zinc-600"}`}
             title={rt.connected ? "connected" : "reconnecting…"}
@@ -160,14 +187,21 @@ export default function ChatDock() {
         </div>
         <button
           onClick={() => setOpen(false)}
-          className="font-pixel text-[10px] text-zinc-500 hover:text-zinc-100 px-2"
+          className="text-zinc-500 hover:text-zinc-100 text-lg leading-none px-2"
           title="Hide chat"
+          aria-label="Close chat"
         >
-          HIDE
+          ✕
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2 text-sm">
+      {announcement && (
+        <div className="mx-3 mt-3 px-3 py-2 border-2 border-indigo-500 bg-indigo-500/10 text-indigo-200 text-xs font-mono whitespace-pre-wrap break-words">
+          📢 {announcement}
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
         {messages.length === 0 && (
           <div className="text-zinc-600 text-xs font-mono text-center pt-6">
             quiet in here…
@@ -181,7 +215,7 @@ export default function ChatDock() {
 
       <form onSubmit={send} className="border-t-2 border-zinc-800 p-3">
         {!loggedIn ? (
-          <p className="text-[10px] text-zinc-500 font-mono text-center">
+          <p className="text-[11px] text-zinc-500 font-mono text-center">
             Log in to chat
           </p>
         ) : (
@@ -193,17 +227,17 @@ export default function ChatDock() {
                 onChange={(e) => setInput(e.target.value)}
                 maxLength={280}
                 disabled={busy}
-                placeholder="type a message"
-                className="flex-1 px-2 py-1.5 bg-zinc-950 border-2 border-zinc-800 text-zinc-100 font-mono text-xs focus:outline-none focus:border-indigo-500 transition"
+                placeholder="Type a message..."
+                className="flex-1 px-3 py-2 bg-zinc-950 border-2 border-zinc-800 text-zinc-100 text-sm focus:outline-none focus:border-indigo-500 transition"
               />
               <button
                 type="submit"
                 disabled={!input.trim() || busy}
-                className={`btn-press px-3 py-1.5 font-pixel text-[10px] border-2 border-zinc-950 ${
+                className={`btn-press px-3 font-pixel text-[10px] border-2 border-zinc-950 ${
                   busy || !input.trim() ? "bg-zinc-800 text-zinc-500" : "bg-indigo-500 text-zinc-950"
                 }`}
               >
-                SEND
+                ▶
               </button>
             </div>
             {err && <p className="text-[10px] text-fuchsia-400 font-mono mt-2">{err}</p>}
@@ -232,29 +266,29 @@ function isMatchMeta(meta: unknown): meta is MatchMeta {
 function Message({ m }: { m: Msg }) {
   const isAchievement = m.chatKind === "achievement";
   const matchMeta = isMatchMeta(m.meta) ? m.meta : null;
+  const time = fmtTime(m.createdAt);
 
   return (
-    <div
-      className={`flex gap-2 ${
-        isAchievement ? "border-l-2 border-amber-400 pl-2 bg-amber-400/5" : ""
-      }`}
-    >
-      <div className="flex-shrink-0 pt-0.5">
-        <Avatar src={m.image} name={m.name} size={24} />
+    <div className="flex gap-2.5">
+      <div className="flex-shrink-0">
+        <Avatar src={m.image} name={m.name} size={32} />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="font-pixel text-[9px] text-zinc-500 truncate">
-          {m.name.toLowerCase()}
+        <div className="flex items-baseline gap-2 mb-0.5">
+          <span className={`text-sm font-semibold truncate ${isAchievement ? "text-amber-300" : "text-zinc-100"}`}>
+            {m.name}
+          </span>
+          <span className="text-[10px] text-zinc-500 font-mono ml-auto flex-shrink-0">{time}</span>
         </div>
         {matchMeta ? (
           <Link
             href={`/match/${matchMeta.matchId}`}
-            className="inline-block mt-1 px-2 py-1 border-2 border-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 font-pixel text-[10px] tracking-wider transition"
+            className="inline-block px-2.5 py-1.5 border-2 border-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 font-pixel text-[10px] tracking-wider transition"
           >
             ▶ JOIN {matchMeta.mode.toUpperCase()} · {LANG_LABEL[matchMeta.language] ?? matchMeta.language} · {matchMeta.difficulty.toUpperCase()}
           </Link>
         ) : (
-          <div className={`text-xs leading-snug break-words ${isAchievement ? "text-amber-300" : "text-zinc-200"}`}>
+          <div className={`text-sm leading-snug break-words ${isAchievement ? "text-amber-200" : "text-zinc-200"}`}>
             {m.body}
           </div>
         )}

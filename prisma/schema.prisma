@@ -277,6 +277,14 @@ model Event {
   @@map("event")
 }
 
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("setting")
+}
+
 model MatchParticipant {
   id            String   @id @default(cuid())
   matchId       String
