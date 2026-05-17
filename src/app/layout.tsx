@@ -7,6 +7,7 @@ import AchievementToast from "@/components/AchievementToast";
 import ChatDock from "@/components/ChatDock";
 import EventBanner from "@/components/EventBanner";
 import TopStrip from "@/components/TopStrip";
+import SystemAlerts from "@/components/SystemAlerts";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,6 +44,7 @@ export default async function RootLayout({
         <CodeRain />
         <EventBanner />
         <TopStrip />
+        <SystemAlerts />
         <RealtimeProvider>
           <div className="flex-1 min-h-0 overflow-y-auto" id="page-scroll">
             {children}

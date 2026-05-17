@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { todayKey, getDailyChallenge } from "@/lib/daily";
 import { rankFor } from "@/lib/ranks";
 import { BADGES, findBadge } from "@/lib/badges";
+import { computeStreaks } from "@/lib/streaks";
 
 export const metadata = { title: "Home — Bugrush" };
 
@@ -21,16 +22,22 @@ export default async function HomePage() {
   const session = await auth.api.getSession({ headers: await headers() });
   const userId = session?.user?.id ?? null;
 
+  const todayStart = new Date();
+  todayStart.setUTCHours(0, 0, 0, 0);
+
+  const me = userId
+    ? await prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true, handle: true, points: true, rankPoints: true },
+      })
+    : null;
+
   const [
-    me, myAttempt, myReward, achievementCount,
+    myAttempt, myReward, achievementCount,
     dailyStats, recentRuns, recentDailies, recentMatches, recentBadges,
+    rankedCount, betterCount, activeToday, inProgressMatches,
+    myDailyKeys,
   ] = await Promise.all([
-    userId
-      ? prisma.user.findUnique({
-          where: { id: userId },
-          select: { name: true, handle: true, points: true, rankPoints: true },
-        })
-      : Promise.resolve(null),
     userId
       ? prisma.dailyAttempt.findUnique({
           where: { userId_dayKey: { userId, dayKey } },
@@ -86,6 +93,22 @@ export default async function HomePage() {
         user: { select: { handle: true, name: true } },
       },
     }),
+    prisma.user.count({ where: { rankPoints: { gt: 0 } } }),
+    me?.rankPoints != null
+      ? prisma.user.count({ where: { rankPoints: { gt: me.rankPoints } } })
+      : Promise.resolve(0),
+    prisma.run.findMany({
+      where: { createdAt: { gte: todayStart } },
+      distinct: ["userId"],
+      select: { userId: true },
+    }),
+    prisma.match.count({ where: { status: "in_progress" } }),
+    userId
+      ? prisma.dailyAttempt.findMany({
+          where: { userId, success: true },
+          select: { dayKey: true },
+        })
+      : Promise.resolve([]),
   ]);
 
   const displayName = me?.name ?? me?.handle ?? "stranger";
@@ -93,6 +116,13 @@ export default async function HomePage() {
 
   const dailySolves = dailyStats._count._all;
   const bestTimeMs = dailyStats._min.timeMs;
+
+  const streaks = computeStreaks(myDailyKeys.map((d) => d.dayKey));
+  const activeTodayCount = activeToday.length;
+  const topPercent =
+    rankedCount > 0 && me?.rankPoints != null && me.rankPoints > 0
+      ? Math.max(0.1, Math.round((betterCount / rankedCount) * 1000) / 10)
+      : null;
 
   // Compose unified feed.
   type FeedItem = { id: string; ts: number; text: React.ReactNode };
@@ -178,9 +208,16 @@ export default async function HomePage() {
   return (
     <div className="text-zinc-100 relative z-10">
       <main className="max-w-6xl mx-auto px-6 py-6 space-y-6">
-        <h1 className="font-pixel text-2xl sm:text-3xl">
-          welcome back <span className="text-indigo-400">{displayName.toLowerCase()}</span>
-        </h1>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <h1 className="font-pixel text-2xl sm:text-3xl">
+            welcome back <span className="text-indigo-400">{displayName.toLowerCase()}</span>
+          </h1>
+          <PulseStrip
+            ranked={rankedCount}
+            activeToday={activeTodayCount}
+            inMatches={inProgressMatches}
+          />
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           {/* Hero: Today's Incident */}
@@ -267,7 +304,14 @@ export default async function HomePage() {
         </div>
 
         {/* Secondary cards */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <section className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <RankCard
+            rankLabel={rank.label}
+            progress={rank.progress}
+            isMax={rank.isMax}
+            topPercent={topPercent}
+          />
+          <StreakCard current={streaks.current} longest={streaks.longest} loggedIn={!!userId} />
           <FeatureCard
             label="COSMETIC SHOP"
             href="/shop"
@@ -286,7 +330,6 @@ export default async function HomePage() {
             state={userId ? `${achievementCount}/${BADGES.length}` : "LOCKED"}
             stateTone={userId ? "emerald" : "amber"}
           />
-          <RankCard rankLabel={rank.label} progress={rank.progress} isMax={rank.isMax} />
         </section>
       </main>
 
@@ -338,26 +381,102 @@ function FeatureCard({
 }
 
 function RankCard({
-  rankLabel, progress, isMax,
+  rankLabel, progress, isMax, topPercent,
 }: {
   rankLabel: string;
   progress: number;
   isMax: boolean;
+  topPercent: number | null;
 }) {
   return (
     <Link
       href="/profile"
-      className="border-2 border-zinc-800 bg-zinc-900 p-4 hover:border-zinc-700 transition flex flex-col justify-between min-h-[96px]"
+      className="border-2 border-indigo-500 bg-zinc-900 p-4 hover:bg-zinc-950 transition flex flex-col justify-between min-h-[96px] relative overflow-hidden"
     >
-      <div className="font-pixel text-[10px] text-zinc-300 leading-tight">YOUR RANKING</div>
-      <div>
-        <div className="font-pixel text-sm text-indigo-400 mt-2 truncate">{rankLabel}</div>
-        {!isMax && (
-          <div className="mt-2 h-1 bg-zinc-950 border border-zinc-800">
-            <div className="h-full bg-indigo-500" style={{ width: `${progress}%` }} />
+      <div className="absolute -top-6 -right-6 w-20 h-20 bg-indigo-500/15 blur-2xl pointer-events-none" />
+      <div className="relative flex items-center justify-between">
+        <div className="font-pixel text-[10px] text-indigo-300 tracking-widest">RANK</div>
+        <div className="w-6 h-6 border-2 border-indigo-500 grid place-items-center text-indigo-300 font-pixel text-[10px]">
+          {isMax ? "★" : "▲"}
+        </div>
+      </div>
+      <div className="relative">
+        <div className="font-pixel text-sm text-zinc-100 mt-2 truncate">{rankLabel}</div>
+        {topPercent != null && (
+          <div className="text-[10px] font-mono text-amber-300 mt-1">
+            TOP {topPercent}%
           </div>
+        )}
+        {!isMax && (
+          <>
+            <div className="mt-2 h-1.5 bg-zinc-950 border border-zinc-800">
+              <div className="h-full bg-indigo-500" style={{ width: `${progress}%` }} />
+            </div>
+            <div className="text-[10px] font-mono text-zinc-500 mt-1">{progress}/100 RP</div>
+          </>
         )}
       </div>
     </Link>
+  );
+}
+
+function StreakCard({
+  current, longest, loggedIn,
+}: {
+  current: number;
+  longest: number;
+  loggedIn: boolean;
+}) {
+  if (!loggedIn) {
+    return (
+      <div className="border-2 border-zinc-800 bg-zinc-900 p-4 flex flex-col justify-between min-h-[96px]">
+        <div className="font-pixel text-[10px] text-zinc-500 tracking-widest">STREAK</div>
+        <div className="font-pixel text-sm text-zinc-600">LOG IN</div>
+      </div>
+    );
+  }
+  const fire = current >= 7 ? "🔥" : current >= 1 ? "•" : "";
+  return (
+    <Link
+      href="/daily"
+      className={`border-2 ${current >= 1 ? "border-amber-400" : "border-zinc-800"} bg-zinc-900 p-4 hover:bg-zinc-950 transition flex flex-col justify-between min-h-[96px]`}
+    >
+      <div className="font-pixel text-[10px] text-amber-300 tracking-widest">DAILY STREAK</div>
+      <div>
+        <div className="font-pixel text-2xl text-amber-300 leading-none flex items-baseline gap-2">
+          <span className="tabular-nums">{current}</span>
+          <span className="text-xs text-amber-400/70">{current === 1 ? "day" : "days"} {fire}</span>
+        </div>
+        <div className="text-[10px] font-mono text-zinc-500 mt-1">longest {longest}</div>
+      </div>
+    </Link>
+  );
+}
+
+function PulseStrip({
+  ranked, activeToday, inMatches,
+}: {
+  ranked: number;
+  activeToday: number;
+  inMatches: number;
+}) {
+  return (
+    <div className="flex items-center gap-4 text-[10px] font-pixel tracking-widest border-2 border-zinc-800 bg-zinc-950 px-3 py-2">
+      <span className="flex items-center gap-1.5">
+        <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+        <span className="text-zinc-500">ACTIVE TODAY</span>
+        <span className="text-emerald-300 font-mono">{activeToday}</span>
+      </span>
+      <span className="text-zinc-700">·</span>
+      <span>
+        <span className="text-zinc-500">RANKED </span>
+        <span className="text-indigo-300 font-mono">{ranked}</span>
+      </span>
+      <span className="text-zinc-700">·</span>
+      <span>
+        <span className="text-zinc-500">IN MATCHES </span>
+        <span className="text-fuchsia-300 font-mono">{inMatches}</span>
+      </span>
+    </div>
   );
 }
