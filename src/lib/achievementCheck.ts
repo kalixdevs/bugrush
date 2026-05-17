@@ -1,0 +1,191 @@
+import { prisma } from "./db";
+import { computeStreaks } from "./streaks";
+import { RANK_TIERS } from "./ranks";
+import { BADGES } from "./badges";
+import { publish } from "./realtime";
+
+export async function checkAndUnlock(userId: string): Promise<string[]> {
+  const [
+    runs,
+    hardcoreWins,
+    dailyDays,
+    distinctLangsAgg,
+    maxScore,
+    userMeta,
+    existing,
+  ] = await Promise.all([
+    prisma.run.aggregate({
+      where: { userId },
+      _count: { _all: true },
+      _sum: { solves: true },
+    }),
+    prisma.run.count({
+      where: {
+        userId,
+        difficulty: "hardcore",
+        NOT: { endReason: "hardcore-fail" },
+      },
+    }),
+    prisma.dailyAttempt.findMany({
+      where: { userId },
+      select: { dayKey: true },
+    }),
+    prisma.run.findMany({
+      where: { userId },
+      select: { languages: true },
+    }),
+    prisma.run.aggregate({
+      where: { userId },
+      _max: { score: true },
+    }),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { rankPoints: true },
+    }),
+    prisma.achievement.findMany({
+      where: { userId },
+      select: { badgeId: true },
+    }),
+  ]);
+
+  const runCount = runs._count._all;
+  const totalSolves = runs._sum.solves ?? 0;
+  const bestScore = maxScore._max.score ?? 0;
+  const langs = new Set(distinctLangsAgg.flatMap((r) => r.languages));
+  const { current: streak, longest: longestStreak } = computeStreaks(
+    dailyDays.map((d) => d.dayKey),
+  );
+  const hasDailySuccess = dailyDays.length > 0;
+  const rp = userMeta?.rankPoints ?? 0;
+  const hackerIdx = RANK_TIERS.indexOf("hacker-1");
+  const terminalIdx = RANK_TIERS.length - 1;
+  const rankIdx = Math.min(Math.floor(rp / 100), terminalIdx);
+  const reachedHacker = rankIdx >= hackerIdx;
+  const reachedTerminal = rankIdx >= terminalIdx;
+
+  const earnedSet = new Set(existing.map((e) => e.badgeId));
+
+  // PvP-derived data
+  const myParticipations = await prisma.matchParticipant.findMany({
+    where: { userId },
+    include: { match: { include: { participants: true } } },
+    orderBy: { joinedAt: "desc" },
+  });
+  const finishedMatches = myParticipations.filter(
+    (p) => p.match.status === "finished",
+  );
+  let lightningFingers = false;
+  let framePerfect = false;
+  let raceCondition = false;
+  for (const p of finishedMatches) {
+    if (p.score > 0 && p.solveTimeMs != null) {
+      if (p.solveTimeMs < 3000) lightningFingers = true;
+      const remaining = p.match.roundSeconds * 1000 - p.solveTimeMs;
+      if (remaining > 0 && remaining < 1000) framePerfect = true;
+      const isWinner = p.match.winnerTeam != null && p.team === p.match.winnerTeam;
+      if (isWinner) {
+        const opponents = p.match.participants.filter((x) => x.team !== p.team);
+        const oppEarliest = opponents
+          .filter((x) => x.solveTimeMs != null && x.score > 0)
+          .map((x) => x.solveTimeMs!)
+          .sort((a, b) => a - b)[0];
+        if (oppEarliest != null && Math.abs(oppEarliest - p.solveTimeMs) < 1000) {
+          raceCondition = true;
+        }
+      }
+    }
+  }
+  // PvP win streak (most recent first)
+  let pvpWinStreak = 0;
+  for (const p of finishedMatches) {
+    const isWinner = p.match.winnerTeam != null && p.team === p.match.winnerTeam;
+    if (isWinner) pvpWinStreak++;
+    else break;
+  }
+
+  const conditions: Record<string, boolean> = {
+    "first-run":           runCount >= 1,
+    "first-solve":         totalSolves >= 1,
+    "bugs-50":             totalSolves >= 50,
+    "bug-hunter-1000":     totalSolves >= 1000,
+    "hc-first":            hardcoreWins >= 1,
+    "hc-ten":              hardcoreWins >= 10,
+    "daily-first":         hasDailySuccess,
+    "streak-7":            Math.max(streak, longestStreak) >= 7,
+    "streak-30":           Math.max(streak, longestStreak) >= 30,
+    "polyglot":            langs.size >= 3,
+    "score-1k":            bestScore >= 1000,
+    "climbing-the-ladder": reachedHacker,
+    "one-above-everyone":  reachedTerminal,
+    "lightning-fingers":   lightningFingers,
+    "frame-perfect":       framePerfect,
+    "race-condition":      raceCondition,
+    "undefeated":          pvpWinStreak >= 10,
+  };
+
+  const toUnlock: string[] = [];
+  for (const badge of BADGES) {
+    if (!badge.checkable) continue;
+    if (earnedSet.has(badge.id)) continue;
+    if (conditions[badge.id]) toUnlock.push(badge.id);
+  }
+
+  if (toUnlock.length === 0) return [];
+
+  const inserted: string[] = [];
+  for (const badgeId of toUnlock) {
+    try {
+      await prisma.achievement.create({ data: { userId, badgeId } });
+      inserted.push(badgeId);
+    } catch {
+      // unique violation = already unlocked in a race; skip.
+    }
+  }
+
+  if (inserted.length > 0) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, handle: true, image: true },
+    });
+    const displayName = user?.name ?? user?.handle ?? "anon";
+
+    for (const badgeId of inserted) {
+      const badge = BADGES.find((b) => b.id === badgeId);
+      if (!badge) continue;
+      const broadcastBody = `${displayName} has completed ${badge.name.toUpperCase()}`;
+
+      try {
+        const row = await prisma.chatMessage.create({
+          data: {
+            userId,
+            channel: "lfm",
+            kind: "achievement",
+            body: broadcastBody,
+            meta: { badgeId, badgeName: badge.name, letter: badge.letter, tone: badge.tone },
+          },
+        });
+        publish("lfm", {
+          kind: "message",
+          id: row.id,
+          userId,
+          name: displayName,
+          handle: user?.handle ?? null,
+          image: user?.image ?? null,
+          chatKind: "achievement",
+          body: broadcastBody,
+          createdAt: row.createdAt.toISOString(),
+        });
+      } catch { /* swallow */ }
+
+      publish(`user:${userId}`, {
+        type: "achievement-unlocked",
+        badgeId,
+        badgeName: badge.name,
+        letter: badge.letter,
+        tone: badge.tone,
+      });
+    }
+  }
+
+  return inserted;
+}

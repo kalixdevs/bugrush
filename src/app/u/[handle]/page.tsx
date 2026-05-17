@@ -1,0 +1,65 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/db";
+import AuthNav from "@/components/AuthNav";
+import Avatar from "@/components/Avatar";
+import PlayerName from "@/components/PlayerName";
+import PlayerProfile, { getProfileData } from "@/components/profile/PlayerProfile";
+import { getEquippedForUser } from "@/lib/cosmetics";
+
+export const metadata = { title: "Player — Devrace" };
+
+export default async function PublicProfilePage({
+  params,
+}: {
+  params: Promise<{ handle: string }>;
+}) {
+  const { handle } = await params;
+  const user = await prisma.user.findUnique({
+    where: { handle: handle.toLowerCase() },
+    select: { id: true, name: true, email: true, image: true, createdAt: true, handle: true, showcaseBadgeId: true },
+  });
+  if (!user) notFound();
+
+  const [data, cos] = await Promise.all([
+    getProfileData(user.id),
+    getEquippedForUser(user.id),
+  ]);
+
+  const label = user.name ?? user.email.split("@")[0];
+  const memberSince = user.createdAt.toISOString().slice(0, 10);
+
+  return (
+    <div className="min-h-screen text-zinc-100">
+      <nav className="border-b-2 border-zinc-800 px-6 h-14 flex items-center justify-between bg-zinc-950">
+        <Link href="/home" className="font-pixel text-xs text-zinc-400 hover:text-indigo-400 transition">
+          ← HOME
+        </Link>
+        <div className="font-pixel text-xs text-indigo-400 tracking-widest">PLAYER</div>
+        <AuthNav />
+      </nav>
+
+      <main className="max-w-4xl mx-auto px-6 py-10 space-y-8">
+        <section className="border-2 border-zinc-800 bg-zinc-900 p-6 flex items-center gap-5">
+          <Avatar src={user.image} name={label} size={80} frameSrc={cos.frame?.assetUrl} />
+          <div>
+            <div className="text-3xl font-bold">
+              <PlayerName
+                name={label}
+                title={cos.title?.textValue}
+                nameEffectClass={cos.nameEffect?.cssClass}
+                showcaseBadgeId={user.showcaseBadgeId}
+              />
+            </div>
+            <div className="font-mono text-xs text-zinc-500 mt-1">@{user.handle}</div>
+            <div className="font-pixel text-[10px] text-zinc-500 mt-3">
+              MEMBER SINCE {memberSince}
+            </div>
+          </div>
+        </section>
+
+        <PlayerProfile data={data} ownProfile={false} showcaseBadgeId={user.showcaseBadgeId} />
+      </main>
+    </div>
+  );
+}

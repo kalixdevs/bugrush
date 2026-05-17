@@ -1,0 +1,294 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  handle        String?   @unique
+  name          String?
+  emailVerified Boolean   @default(false)
+  image         String?
+  points        Int       @default(0)
+  rankPoints    Int       @default(0)
+  role          String    @default("user")
+  showcaseBadgeId String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  runs          Run[]
+  dailyAttempts DailyAttempt[]
+  transactions  Transaction[]
+  userCosmetics UserCosmetic[]
+  equipped      EquippedCosmetic[]
+  achievements  Achievement[]
+  dailyRewards  DailyReward[]
+  promoRedemptions PromoRedemption[]
+  chatMessages  ChatMessage[]
+  hostedMatches  Match[]            @relation("MatchHost")
+  participations MatchParticipant[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  providerId            String
+  accountId             String
+  password              String?
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verification")
+}
+
+model Run {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  score        Int
+  solves       Int
+  difficulty   String
+  languages    String[]
+  roundSeconds Int?
+  solveCap     Int?
+  endReason    String
+  createdAt    DateTime @default(now())
+
+  @@index([score(sort: Desc)])
+  @@index([userId, createdAt])
+  @@map("run")
+}
+
+model DailyAttempt {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dayKey      String
+  challengeId String
+  success     Boolean
+  timeMs      Int
+  score       Int
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, dayKey])
+  @@index([dayKey, score(sort: Desc)])
+  @@map("daily_attempt")
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String
+  amount    Int
+  reason    String
+  refId     String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, kind, createdAt])
+  @@map("transaction")
+}
+
+model Cosmetic {
+  id          String   @id
+  category    String
+  name        String
+  description String
+  rarity      String
+  priceCoins  Int?
+  assetUrl    String?
+  cssClass    String?
+  textValue   String?
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  userCosmetics UserCosmetic[]
+
+  @@map("cosmetic")
+}
+
+model UserCosmetic {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cosmeticId  String
+  cosmetic    Cosmetic @relation(fields: [cosmeticId], references: [id], onDelete: Cascade)
+  acquiredAt  DateTime @default(now())
+  acquiredVia String
+
+  @@unique([userId, cosmeticId])
+  @@index([userId])
+  @@map("user_cosmetic")
+}
+
+model EquippedCosmetic {
+  userId     String
+  category   String
+  cosmeticId String?
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, category])
+  @@map("equipped_cosmetic")
+}
+
+model Achievement {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId    String
+  unlockedAt DateTime @default(now())
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@map("achievement")
+}
+
+model DailyReward {
+  userId        String
+  dayKey        String
+  cosmeticId    String?
+  pointsAwarded Int
+  rarity        String
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, dayKey])
+  @@map("daily_reward")
+}
+
+model PromoCode {
+  code       String    @id
+  rewardJson Json
+  maxUses    Int?
+  usedCount  Int       @default(0)
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  redemptions PromoRedemption[]
+
+  @@map("promo_code")
+}
+
+model PromoRedemption {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code       String
+  promoCode  PromoCode @relation(fields: [code], references: [code], onDelete: Cascade)
+  redeemedAt DateTime  @default(now())
+
+  @@unique([userId, code])
+  @@index([code])
+  @@map("promo_redemption")
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel   String
+  kind      String
+  body      String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([channel, createdAt])
+  @@map("chat_message")
+}
+
+model Match {
+  id           String    @id @default(cuid())
+  hostId       String
+  host         User      @relation("MatchHost", fields: [hostId], references: [id], onDelete: Cascade)
+  mode         String
+  privacy      String
+  difficulty   String
+  language     String
+  roundSeconds Int
+  status       String
+  challengeId  String?
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  winnerTeam   Int?
+  createdAt    DateTime  @default(now())
+
+  participants MatchParticipant[]
+
+  @@index([status, createdAt])
+  @@map("match")
+}
+
+model Event {
+  id                   String   @id @default(cuid())
+  name                 String
+  startsAt             DateTime
+  endsAt               DateTime
+  pointsMultiplier     Float    @default(1)
+  rankPointsMultiplier Float    @default(1)
+  exclusiveDrops       Json     @default("[]")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([startsAt, endsAt])
+  @@map("event")
+}
+
+model MatchParticipant {
+  id            String   @id @default(cuid())
+  matchId       String
+  match         Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team          Int
+  ready         Boolean  @default(false)
+  score         Int      @default(0)
+  solveTimeMs   Int?
+  submittedCode String?
+  joinedAt      DateTime @default(now())
+
+  @@unique([matchId, userId])
+  @@index([matchId])
+  @@map("match_participant")
+}
