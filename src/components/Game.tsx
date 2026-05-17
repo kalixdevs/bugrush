@@ -145,7 +145,7 @@ export default function Game() {
   const badTimeLabel = isTimed ? "Not quite — −3s." : "Not quite.";
 
   return (
-    <div className="h-screen bg-zinc-950 text-zinc-100 flex flex-col">
+    <div className="h-full bg-zinc-950 text-zinc-100 flex flex-col overflow-hidden">
       <header className="border-b-2 border-zinc-800 px-6 py-3 flex items-center justify-between bg-zinc-950">
         <div className="flex items-center gap-6">
           <div className="font-pixel text-xs text-indigo-400 tracking-widest">BUGRUSH</div>

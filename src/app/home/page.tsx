@@ -42,12 +42,12 @@ export default async function HomePage() {
   const rank = rankFor(me?.rankPoints ?? 0);
 
   return (
-    <div className="min-h-screen text-zinc-100 flex flex-col relative z-10">
+    <div className="h-full text-zinc-100 flex flex-col relative z-10 overflow-hidden">
       <TopStrip points={points} loggedIn={!!userId} />
 
       <div className="flex flex-1 min-h-0">
-        <main className="flex-1 px-6 py-6">
-          <div className="max-w-5xl mx-auto space-y-8">
+        <main className="flex-1 px-6 py-4 overflow-hidden">
+          <div className="max-w-5xl mx-auto space-y-5">
             <h1 className="font-pixel text-3xl sm:text-4xl">
               welcome back <span className="text-indigo-400">{displayName.toLowerCase()}</span>
             </h1>

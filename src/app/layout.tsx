@@ -38,13 +38,13 @@ export default async function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${pressStart.variable} h-full antialiased`}
     >
-      <body className="h-full antialiased bg-zinc-950 bg-grid text-zinc-100">
+      <body className="h-screen overflow-hidden antialiased bg-zinc-950 bg-grid text-zinc-100 flex flex-col">
         <CodeRain />
-        <div className="sticky top-0 z-50">
-          <EventBanner />
-        </div>
+        <EventBanner />
         <RealtimeProvider>
-          {children}
+          <div className="flex-1 min-h-0 overflow-y-auto" id="page-scroll">
+            {children}
+          </div>
           <ChatDock />
           <AchievementToast />
         </RealtimeProvider>
