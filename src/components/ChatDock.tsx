@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRealtime } from "@/lib/realtimeClient";
 import { useSession } from "@/lib/auth-client";
 import Avatar from "./Avatar";
+import BadgeIcon from "./BadgeIcon";
+import { findBadge } from "@/lib/badges";
 
 type MatchMeta = {
   matchId: string;
@@ -22,6 +24,10 @@ type Msg = {
   handle: string | null;
   image: string | null;
   senderRole?: string;
+  senderFrame?: string | null;
+  senderTitle?: string | null;
+  senderNameEffect?: string | null;
+  senderShowcaseBadgeId?: string | null;
   chatKind: string;
   body: string;
   meta?: MatchMeta | Record<string, unknown> | null;
@@ -312,19 +318,27 @@ function Message({ m, isAdmin }: { m: Msg; isAdmin: boolean }) {
     });
   };
 
+  const showcase = m.senderShowcaseBadgeId ? findBadge(m.senderShowcaseBadgeId) : undefined;
+
   return (
     <div className="group flex gap-2.5 relative">
       <div className="flex-shrink-0">
-        <Avatar src={m.image} name={m.name} size={32} />
+        <Avatar src={m.image} name={m.name} size={32} frameSrc={m.senderFrame} />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-2 mb-0.5">
-          <span className={`text-sm font-semibold truncate ${isAchievement ? "text-amber-300" : isSenderAdmin ? "text-amber-300" : "text-zinc-100"}`}>
+        <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+          {showcase && <BadgeIcon badge={showcase} size={14} />}
+          <span className={`text-sm font-semibold truncate ${m.senderNameEffect ?? ""} ${isAchievement ? "text-amber-300" : isSenderAdmin ? "text-amber-300" : "text-zinc-100"}`}>
             {m.name}
           </span>
           {isSenderAdmin && (
             <span className="font-pixel text-[8px] tracking-widest px-1.5 py-0.5 border-2 border-amber-400 text-amber-300 leading-none">
               ADMIN
+            </span>
+          )}
+          {m.senderTitle && (
+            <span className="font-pixel text-[8px] tracking-widest px-1.5 py-0.5 border-2 border-amber-400 text-amber-300 leading-none">
+              {m.senderTitle}
             </span>
           )}
           <span className="text-[10px] text-zinc-500 font-mono ml-auto flex-shrink-0">{time}</span>

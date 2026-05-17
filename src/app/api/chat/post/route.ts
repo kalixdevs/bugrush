@@ -4,6 +4,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { publish } from "@/lib/realtime";
+import { getEquippedForUser } from "@/lib/cosmetics";
 
 const Body = z.object({ body: z.string().min(1).max(280) });
 
@@ -52,10 +53,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "blocked" }, { status: 400 });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { name: true, handle: true, image: true, role: true, chatMutedUntil: true },
-  });
+  const [user, equipped] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        name: true, handle: true, image: true, role: true,
+        chatMutedUntil: true, showcaseBadgeId: true,
+      },
+    }),
+    getEquippedForUser(session.user.id),
+  ]);
 
   if (user?.chatMutedUntil && user.chatMutedUntil.getTime() > now) {
     return NextResponse.json(
@@ -103,6 +110,10 @@ export async function POST(req: Request) {
     handle: user?.handle ?? null,
     image: user?.image ?? null,
     senderRole: user?.role ?? "user",
+    senderFrame: equipped.frame?.assetUrl ?? null,
+    senderTitle: equipped.title?.textValue ?? null,
+    senderNameEffect: equipped.nameEffect?.cssClass ?? null,
+    senderShowcaseBadgeId: user?.showcaseBadgeId ?? null,
     chatKind: "text",
     body: text,
     meta,
