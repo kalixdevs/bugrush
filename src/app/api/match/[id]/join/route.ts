@@ -39,6 +39,6 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
     return NextResponse.json({ error: msg }, { status: code });
   }
 
-  publish(`match:${matchId}`, { type: "participant_joined" });
+  await publish(`match:${matchId}`, { type: "participant_joined" });
   return NextResponse.json({ ok: true });
 }

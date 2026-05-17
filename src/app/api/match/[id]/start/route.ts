@@ -49,7 +49,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
     data: { status: "in_progress", startedAt, challengeId: challenge.id },
   });
 
-  publish(`match:${matchId}`, {
+  await publish(`match:${matchId}`, {
     type: "started",
     startedAt: startedAt.toISOString(),
     challenge: {

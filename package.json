@@ -4,13 +4,16 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "@prisma/client": "^6.19.3",
+    "@upstash/redis": "^1.38.0",
+    "@vercel/blob": "^2.3.3",
     "better-auth": "^1.6.11",
     "next": "16.2.6",
     "prisma": "^6.19.3",

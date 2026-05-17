@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { writeFile, mkdir, readdir, unlink } from "fs/promises";
-import { join } from "path";
+import { put, del, list } from "@vercel/blob";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+
+export const runtime = "nodejs";
 
 const MAX_BYTES = 2 * 1024 * 1024;
 const ALLOWED = new Map<string, string>([
@@ -13,7 +14,16 @@ const ALLOWED = new Map<string, string>([
   ["image/gif", "gif"],
 ]);
 
-const UPLOAD_DIR = join(process.cwd(), "public", "uploads");
+const PREFIX = "avatars/";
+
+async function deleteExisting(userId: string): Promise<void> {
+  try {
+    const listing = await list({ prefix: `${PREFIX}${userId}.` });
+    if (listing.blobs.length > 0) {
+      await del(listing.blobs.map((b) => b.url));
+    }
+  } catch { /* swallow */ }
+}
 
 export async function POST(req: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -40,30 +50,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "file too large" }, { status: 400 });
   }
 
-  const bytes = Buffer.from(await file.arrayBuffer());
-  await mkdir(UPLOAD_DIR, { recursive: true });
-
   const userId = session.user.id;
-  // Remove previous avatar files for this user (any extension).
-  try {
-    const files = await readdir(UPLOAD_DIR);
-    await Promise.all(
-      files
-        .filter((f) => f.startsWith(`${userId}.`))
-        .map((f) => unlink(join(UPLOAD_DIR, f)).catch(() => {})),
-    );
-  } catch {}
+  await deleteExisting(userId);
 
-  const filename = `${userId}.${ext}`;
-  await writeFile(join(UPLOAD_DIR, filename), bytes);
-
-  const url = `/uploads/${filename}?v=${Date.now()}`;
-  await prisma.user.update({
-    where: { id: userId },
-    data: { image: url },
+  const filename = `${PREFIX}${userId}.${ext}`;
+  const blob = await put(filename, file, {
+    access: "public",
+    contentType: file.type,
+    addRandomSuffix: true,
   });
 
-  return NextResponse.json({ url });
+  await prisma.user.update({
+    where: { id: userId },
+    data: { image: blob.url },
+  });
+
+  return NextResponse.json({ url: blob.url });
 }
 
 export async function DELETE() {
@@ -71,21 +73,10 @@ export async function DELETE() {
   if (!session?.user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-
-  const userId = session.user.id;
-  try {
-    const files = await readdir(UPLOAD_DIR);
-    await Promise.all(
-      files
-        .filter((f) => f.startsWith(`${userId}.`))
-        .map((f) => unlink(join(UPLOAD_DIR, f)).catch(() => {})),
-    );
-  } catch {}
-
+  await deleteExisting(session.user.id);
   await prisma.user.update({
-    where: { id: userId },
+    where: { id: session.user.id },
     data: { image: null },
   });
-
   return NextResponse.json({ ok: true });
 }

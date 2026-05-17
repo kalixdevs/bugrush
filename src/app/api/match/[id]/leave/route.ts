@@ -36,6 +36,6 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
     }
   });
 
-  publish(`match:${matchId}`, { type: "participant_left" });
+  await publish(`match:${matchId}`, { type: "participant_left" });
   return NextResponse.json({ ok: true });
 }

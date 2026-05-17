@@ -24,6 +24,6 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
     where: { id: matchId },
     data: { status: "cancelled" },
   });
-  publish(`match:${matchId}`, { type: "cancelled" });
+  await publish(`match:${matchId}`, { type: "cancelled" });
   return NextResponse.json({ ok: true });
 }

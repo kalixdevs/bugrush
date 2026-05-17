@@ -22,6 +22,6 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
     data: { ready: !current.ready },
   });
 
-  publish(`match:${matchId}`, { type: "participant_ready" });
+  await publish(`match:${matchId}`, { type: "participant_ready" });
   return NextResponse.json({ ok: true });
 }

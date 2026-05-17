@@ -72,7 +72,7 @@ export async function POST(req: Request) {
     createdAt: row.createdAt.toISOString(),
   };
 
-  publish("lfm", payload);
+  await publish("lfm", payload);
 
   return NextResponse.json({ message: payload });
 }

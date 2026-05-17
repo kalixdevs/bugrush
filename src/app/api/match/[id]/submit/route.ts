@@ -69,7 +69,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     },
   });
 
-  publish(`match:${matchId}`, {
+  await publish(`match:${matchId}`, {
     type: "participant_solved",
     userId: session.user.id,
     success,
@@ -127,7 +127,7 @@ async function settle(matchId: string): Promise<void> {
     await checkAndUnlock(p.userId);
   }
 
-  publish(`match:${matchId}`, {
+  await publish(`match:${matchId}`, {
     type: "finished",
     winnerTeam: result.winnerTeam,
   });

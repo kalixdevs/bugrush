@@ -164,7 +164,7 @@ export async function checkAndUnlock(userId: string): Promise<string[]> {
             meta: { badgeId, badgeName: badge.name, letter: badge.letter, tone: badge.tone },
           },
         });
-        publish("lfm", {
+        await publish("lfm", {
           kind: "message",
           id: row.id,
           userId,
@@ -177,7 +177,7 @@ export async function checkAndUnlock(userId: string): Promise<string[]> {
         });
       } catch { /* swallow */ }
 
-      publish(`user:${userId}`, {
+      await publish(`user:${userId}`, {
         type: "achievement-unlocked",
         badgeId,
         badgeName: badge.name,

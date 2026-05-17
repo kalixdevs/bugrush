@@ -19,42 +19,50 @@ type Ctx = {
 
 const RealtimeCtx = createContext<Ctx | null>(null);
 
+const POLL_INTERVAL_MS = 1500;
+
 export function RealtimeProvider({ children }: { children: ReactNode }) {
   const handlersRef = useRef(new Set<Handler>());
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    let es: EventSource | null = null;
-    let retryTimer: ReturnType<typeof setTimeout> | null = null;
-    let closed = false;
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let since = 0;
 
-    const open = () => {
-      if (closed) return;
-      es = new EventSource("/api/stream");
-      es.onopen = () => setConnected(true);
-      es.onmessage = (msg) => {
-        try {
-          const payload = JSON.parse(msg.data);
-          for (const fn of handlersRef.current) {
-            try { fn(payload); } catch { /* swallow */ }
+    const tick = async () => {
+      if (stopped) return;
+      try {
+        const res = await fetch(`/api/poll?since=${since}`, { cache: "no-store" });
+        if (res.ok) {
+          const json = (await res.json()) as {
+            events: Array<{ channel: string; ts: number; data: unknown }>;
+            now: number;
+          };
+          if (!stopped) {
+            setConnected(true);
+            for (const ev of json.events) {
+              if (ev.ts > since) since = ev.ts;
+              for (const fn of handlersRef.current) {
+                try { fn(ev.data); } catch { /* swallow */ }
+              }
+            }
+            if (json.now > since) since = json.now;
           }
-        } catch { /* ignore */ }
-      };
-      es.onerror = () => {
-        setConnected(false);
-        es?.close();
-        es = null;
-        if (closed) return;
-        retryTimer = setTimeout(open, 5000);
-      };
+        } else if (!stopped) {
+          setConnected(false);
+        }
+      } catch {
+        if (!stopped) setConnected(false);
+      }
+      if (!stopped) timer = setTimeout(tick, POLL_INTERVAL_MS);
     };
 
-    open();
+    tick();
 
     return () => {
-      closed = true;
-      if (retryTimer) clearTimeout(retryTimer);
-      es?.close();
+      stopped = true;
+      if (timer) clearTimeout(timer);
     };
   }, []);
 
@@ -79,8 +87,7 @@ export function useRealtime(): Ctx {
 }
 
 /**
- * Per-match EventSource. Opens a dedicated stream with ?match=<id> so the
- * server subscribes us to that match's channel.
+ * Per-match polling. Polls /api/poll?match=<id> and surfaces events for that match.
  */
 export function useMatchRealtime(
   matchId: string | null,
@@ -95,35 +102,44 @@ export function useMatchRealtime(
 
   useEffect(() => {
     if (!matchId) return;
-    let es: EventSource | null = null;
-    let retryTimer: ReturnType<typeof setTimeout> | null = null;
-    let closed = false;
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let since = 0;
 
-    const open = () => {
-      if (closed) return;
-      es = new EventSource(`/api/stream?match=${encodeURIComponent(matchId)}`);
-      es.onopen = () => setConnected(true);
-      es.onmessage = (msg) => {
-        try {
-          const payload = JSON.parse(msg.data);
-          try { handlerRef.current(payload); } catch { /* swallow */ }
-        } catch { /* ignore */ }
-      };
-      es.onerror = () => {
-        setConnected(false);
-        es?.close();
-        es = null;
-        if (closed) return;
-        retryTimer = setTimeout(open, 5000);
-      };
+    const tick = async () => {
+      if (stopped) return;
+      try {
+        const res = await fetch(
+          `/api/poll?match=${encodeURIComponent(matchId)}&since=${since}`,
+          { cache: "no-store" },
+        );
+        if (res.ok) {
+          const json = (await res.json()) as {
+            events: Array<{ channel: string; ts: number; data: unknown }>;
+            now: number;
+          };
+          if (!stopped) {
+            setConnected(true);
+            for (const ev of json.events) {
+              if (ev.ts > since) since = ev.ts;
+              try { handlerRef.current(ev.data); } catch { /* swallow */ }
+            }
+            if (json.now > since) since = json.now;
+          }
+        } else if (!stopped) {
+          setConnected(false);
+        }
+      } catch {
+        if (!stopped) setConnected(false);
+      }
+      if (!stopped) timer = setTimeout(tick, POLL_INTERVAL_MS);
     };
 
-    open();
+    tick();
 
     return () => {
-      closed = true;
-      if (retryTimer) clearTimeout(retryTimer);
-      es?.close();
+      stopped = true;
+      if (timer) clearTimeout(timer);
     };
   }, [matchId]);
 
