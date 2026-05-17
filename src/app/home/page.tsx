@@ -332,12 +332,6 @@ export default async function HomePage() {
           />
         </section>
       </main>
-
-      <footer className="border-t-2 border-zinc-800 mt-8">
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center font-pixel text-[10px] text-zinc-500">
-          <div>© {new Date().getFullYear()} BUGRUSH</div>
-        </div>
-      </footer>
     </div>
   );
 }
