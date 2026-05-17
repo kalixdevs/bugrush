@@ -164,6 +164,14 @@ body.in-round .rain { display: none; }
   background: transparent;
 }
 
+/* Page-level scroll container: hide scrollbar visually, keep wheel scroll. */
+#page-scroll {
+  scrollbar-width: none;
+}
+#page-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 @keyframes toastFade {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
