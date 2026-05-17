@@ -21,7 +21,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const parsed = Body.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "invalid payload" }, { status: 400 });
 
-  const target = await prisma.user.findUnique({ where: { id }, select: { id: true } });
+  const target = await prisma.user.findUnique({
+    where: { id },
+    select: { id: true, points: true, rankPoints: true },
+  });
   if (!target) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   if (parsed.data.kind === "cosmetic") {
@@ -38,6 +41,18 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       throw e;
     }
     return NextResponse.json({ ok: true });
+  }
+
+  // Reject debits that would drive the balance negative.
+  if (parsed.data.amount < 0) {
+    const current = parsed.data.kind === "points" ? target.points : target.rankPoints;
+    if (current + parsed.data.amount < 0) {
+      console.error(`[sec] admin ${admin.id} attempted overdraft on user ${id} (${parsed.data.kind} ${parsed.data.amount} vs ${current})`);
+      return NextResponse.json(
+        { error: "insufficient balance", current },
+        { status: 400 },
+      );
+    }
   }
 
   await credit(id, parsed.data.kind, parsed.data.amount, "admin_grant", admin.id);

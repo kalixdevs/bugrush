@@ -1,3 +1,5 @@
+import { safeImageSrc } from "@/lib/safe";
+
 type Props = {
   src?: string | null;
   name: string;
@@ -24,10 +26,12 @@ function hueFor(name: string): string {
 
 export default function Avatar({ src, name, size = 40, frameSrc }: Props) {
   const dim = `${size}px`;
-  const inner = src ? (
+  const safeSrc = safeImageSrc(src);
+  const safeFrame = safeImageSrc(frameSrc);
+  const inner = safeSrc ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={src}
+      src={safeSrc}
       alt={name}
       width={size}
       height={size}
@@ -44,14 +48,14 @@ export default function Avatar({ src, name, size = 40, frameSrc }: Props) {
     </div>
   );
 
-  if (!frameSrc) return inner;
+  if (!safeFrame) return inner;
 
   return (
     <div className="relative inline-block" style={{ width: dim, height: dim }}>
       {inner}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={frameSrc}
+        src={safeFrame}
         alt=""
         aria-hidden="true"
         className="absolute inset-0 pointer-events-none"

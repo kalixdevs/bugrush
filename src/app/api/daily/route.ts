@@ -9,6 +9,7 @@ import { credit } from "@/lib/economy";
 import { coinsFromScore, POINTS_FOR_RUN } from "@/lib/ranks";
 import { checkAndUnlock } from "@/lib/achievementCheck";
 import { applyEventMultiplier, getActiveEvent } from "@/lib/events";
+import { rateLimit, rlKey } from "@/lib/rateLimit";
 
 const BodySchema = z.object({
   success: z.boolean(),
@@ -20,6 +21,14 @@ export async function POST(req: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  const rl = await rateLimit(rlKey("daily", session.user.id), 10, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "rate_limited", retryInMs: rl.retryInMs },
+      { status: 429 },
+    );
   }
 
   let body: unknown;

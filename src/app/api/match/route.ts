@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import {
   MATCH_MODES, MATCH_PRIVACY, MATCH_ROUND_SECONDS, isMatchExpired,
 } from "@/lib/match";
+import { rateLimit, rlKey } from "@/lib/rateLimit";
 
 const CreateBody = z.object({
   mode: z.enum(MATCH_MODES),
@@ -22,6 +23,15 @@ export async function POST(req: Request) {
   if (!session?.user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+
+  const rl = await rateLimit(rlKey("match_create", session.user.id), 10, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "rate_limited", retryInMs: rl.retryInMs },
+      { status: 429 },
+    );
+  }
+
   let body: unknown;
   try { body = await req.json(); }
   catch { return NextResponse.json({ error: "invalid json" }, { status: 400 }); }

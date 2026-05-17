@@ -27,10 +27,23 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
+    minPasswordLength: 8,
+    maxPasswordLength: 128,
   },
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,
   trustedOrigins,
+  advanced: {
+    cookies: {
+      session_token: {
+        attributes: {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+        },
+      },
+    },
+  },
   databaseHooks: {
     user: {
       create: {

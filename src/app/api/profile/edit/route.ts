@@ -4,6 +4,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { describeHandleError, normalizeHandle } from "@/lib/handle";
+import { rateLimit, rlKey } from "@/lib/rateLimit";
 
 const BodySchema = z
   .object({
@@ -18,6 +19,14 @@ export async function POST(req: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  const rl = await rateLimit(rlKey("profile_edit", session.user.id), 10, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "rate_limited", retryInMs: rl.retryInMs },
+      { status: 429 },
+    );
   }
 
   let body: unknown;

@@ -7,6 +7,7 @@ import { credit } from "@/lib/economy";
 import { coinsFromScore, POINTS_FOR_RUN } from "@/lib/ranks";
 import { checkAndUnlock } from "@/lib/achievementCheck";
 import { applyEventMultiplier, getActiveEvent } from "@/lib/events";
+import { rateLimit, rlKey } from "@/lib/rateLimit";
 
 const RunSchema = z.object({
   score: z.number().int().nonnegative().max(1_000_000),
@@ -22,6 +23,14 @@ export async function POST(req: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  const rl = await rateLimit(rlKey("runs", session.user.id), 30, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "rate_limited", retryInMs: rl.retryInMs },
+      { status: 429 },
+    );
   }
 
   let body: unknown;

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { put, del, list } from "@vercel/blob";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { rateLimit, rlKey } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -29,6 +30,14 @@ export async function POST(req: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  const rl = await rateLimit(rlKey("avatar", session.user.id), 5, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "rate_limited", retryInMs: rl.retryInMs },
+      { status: 429 },
+    );
   }
 
   let form: FormData;

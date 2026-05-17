@@ -20,6 +20,21 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     return NextResponse.json({ error: "cannot demote yourself" }, { status: 400 });
   }
 
+  // Block one admin from demoting another admin. Only self-demotion is allowed.
+  if (parsed.data.role === "user") {
+    const target = await prisma.user.findUnique({
+      where: { id },
+      select: { role: true },
+    });
+    if (!target) {
+      return NextResponse.json({ error: "not found" }, { status: 404 });
+    }
+    if (target.role === "admin" && id !== admin.id) {
+      console.error(`[sec] admin ${admin.id} attempted to demote admin ${id}`);
+      return NextResponse.json({ error: "cannot demote another admin" }, { status: 403 });
+    }
+  }
+
   try {
     const user = await prisma.user.update({
       where: { id },
@@ -27,7 +42,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       select: { id: true, role: true },
     });
     return NextResponse.json({ user });
-  } catch {
+  } catch (e) {
+    console.error("[sec] role update failed", e);
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 }
