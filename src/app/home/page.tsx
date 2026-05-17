@@ -123,19 +123,13 @@ function TopStrip({ points, loggedIn }: { points: number; loggedIn: boolean }) {
         <Link href="/home" className="font-pixel text-indigo-400 text-xs tracking-widest">
           BUGRUSH
         </Link>
-        <div className="flex items-center gap-5 text-xs font-pixel">
+        <div className="flex items-center gap-4 text-xs">
           {loggedIn && <PointsBadge value={points} />}
-          <Link href="/leaderboard" className="text-zinc-400 hover:text-indigo-400 transition">
-            LEADERBOARD
+          <Link href="/leaderboard" title="Leaderboard" className="text-zinc-400 hover:text-indigo-400 transition text-xl leading-none">
+            🏆
           </Link>
-          <Link href="/daily" className="text-zinc-400 hover:text-indigo-400 transition">
-            DAILY
-          </Link>
-          <Link
-            href={loggedIn ? "/redeem" : "/login?next=/redeem"}
-            className="text-zinc-400 hover:text-indigo-400 transition"
-          >
-            REDEEM
+          <Link href="/daily" title="Daily challenge" className="text-zinc-400 hover:text-indigo-400 transition text-xl leading-none">
+            📅
           </Link>
           <AuthNav />
         </div>
