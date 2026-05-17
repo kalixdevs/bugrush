@@ -2,18 +2,29 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { todayKey } from "@/lib/daily";
+import { todayKey, getDailyChallenge } from "@/lib/daily";
 import { rankFor } from "@/lib/ranks";
-import { BADGES } from "@/lib/badges";
+import { BADGES, findBadge } from "@/lib/badges";
 
 export const metadata = { title: "Home — Bugrush" };
 
+const DIFF_TONE: Record<string, string> = {
+  easy: "border-emerald-500 text-emerald-300",
+  normal: "border-sky-500 text-sky-300",
+  hard: "border-fuchsia-500 text-fuchsia-300",
+  hardcore: "border-fuchsia-500 text-fuchsia-200",
+};
+
 export default async function HomePage() {
   const dayKey = todayKey();
+  const challenge = getDailyChallenge(dayKey);
   const session = await auth.api.getSession({ headers: await headers() });
   const userId = session?.user?.id ?? null;
 
-  const [me, myAttempt, myReward, achievementCount] = await Promise.all([
+  const [
+    me, myAttempt, myReward, achievementCount,
+    dailyStats, recentRuns, recentDailies, recentMatches, recentBadges,
+  ] = await Promise.all([
     userId
       ? prisma.user.findUnique({
           where: { id: userId },
@@ -33,81 +44,269 @@ export default async function HomePage() {
     userId
       ? prisma.achievement.count({ where: { userId } })
       : Promise.resolve(0),
+    prisma.dailyAttempt.aggregate({
+      where: { dayKey, success: true },
+      _count: { _all: true },
+      _min: { timeMs: true },
+    }),
+    prisma.run.findMany({
+      where: { score: { gte: 500 } },
+      orderBy: { createdAt: "desc" },
+      take: 4,
+      select: {
+        id: true, score: true, createdAt: true,
+        user: { select: { handle: true, name: true } },
+      },
+    }),
+    prisma.dailyAttempt.findMany({
+      where: { success: true, dayKey },
+      orderBy: { timeMs: "asc" },
+      take: 4,
+      select: {
+        id: true, timeMs: true, createdAt: true,
+        user: { select: { handle: true, name: true } },
+      },
+    }),
+    prisma.match.findMany({
+      where: { status: "finished", winnerTeam: { not: null } },
+      orderBy: { finishedAt: "desc" },
+      take: 4,
+      select: {
+        id: true, mode: true, finishedAt: true, winnerTeam: true,
+        participants: {
+          select: { team: true, user: { select: { handle: true, name: true } } },
+        },
+      },
+    }),
+    prisma.achievement.findMany({
+      orderBy: { unlockedAt: "desc" },
+      take: 4,
+      select: {
+        id: true, badgeId: true, unlockedAt: true,
+        user: { select: { handle: true, name: true } },
+      },
+    }),
   ]);
 
   const displayName = me?.name ?? me?.handle ?? "stranger";
   const rank = rankFor(me?.rankPoints ?? 0);
 
+  const dailySolves = dailyStats._count._all;
+  const bestTimeMs = dailyStats._min.timeMs;
+
+  // Compose unified feed.
+  type FeedItem = { id: string; ts: number; text: React.ReactNode };
+  const feed: FeedItem[] = [];
+  for (const r of recentRuns) {
+    feed.push({
+      id: `r:${r.id}`,
+      ts: r.createdAt.getTime(),
+      text: (
+        <>
+          <FeedName name={r.user.handle ?? r.user.name ?? "anon"} />{" "}
+          <span className="text-zinc-400">scored</span>{" "}
+          <span className="text-indigo-300 font-mono">{r.score}</span>
+        </>
+      ),
+    });
+  }
+  for (const d of recentDailies) {
+    feed.push({
+      id: `d:${d.id}`,
+      ts: d.createdAt.getTime(),
+      text: (
+        <>
+          <FeedName name={d.user.handle ?? d.user.name ?? "anon"} />{" "}
+          <span className="text-zinc-400">solved Today&apos;s Incident in</span>{" "}
+          <span className="text-amber-300 font-mono">{(d.timeMs / 1000).toFixed(1)}s</span>
+        </>
+      ),
+    });
+  }
+  for (const m of recentMatches) {
+    if (m.finishedAt == null || m.winnerTeam == null) continue;
+    const winners = m.participants
+      .filter((p) => p.team === m.winnerTeam)
+      .map((p) => p.user.handle ?? p.user.name ?? "anon");
+    if (winners.length === 0) continue;
+    feed.push({
+      id: `m:${m.id}`,
+      ts: m.finishedAt.getTime(),
+      text: (
+        <>
+          <FeedName name={winners[0]} />
+          {winners.length > 1 && <span className="text-zinc-500"> +{winners.length - 1}</span>}{" "}
+          <span className="text-zinc-400">won a</span>{" "}
+          <span className="text-fuchsia-300 font-mono">{m.mode.toUpperCase()}</span>
+        </>
+      ),
+    });
+  }
+  for (const a of recentBadges) {
+    const badge = findBadge(a.badgeId);
+    if (!badge) continue;
+    feed.push({
+      id: `a:${a.id}`,
+      ts: a.unlockedAt.getTime(),
+      text: (
+        <>
+          <FeedName name={a.user.handle ?? a.user.name ?? "anon"} />{" "}
+          <span className="text-zinc-400">unlocked</span>{" "}
+          <span className="text-amber-300">{badge.name}</span>
+        </>
+      ),
+    });
+  }
+  feed.sort((a, b) => b.ts - a.ts);
+  const feedItems = feed.slice(0, 10);
+
+  const dailyState = !userId
+    ? { label: "LOG IN TO PLAY", href: "/login?next=/daily/play", tone: "amber" as const }
+    : myAttempt
+      ? myAttempt.success
+        ? { label: `✓ SOLVED IN ${(myAttempt.timeMs / 1000).toFixed(1)}s`, href: "/daily", tone: "emerald" as const }
+        : { label: "MISSED — COMES BACK TOMORROW", href: "/daily", tone: "fuchsia" as const }
+      : { label: "▶ PLAY NOW", href: "/daily/play", tone: "indigo" as const };
+  const diffTone = DIFF_TONE[challenge.difficulty] ?? DIFF_TONE.normal;
+  const ctaCls = {
+    indigo: "bg-indigo-500 text-zinc-950",
+    emerald: "bg-emerald-500 text-zinc-950",
+    fuchsia: "bg-fuchsia-500 text-zinc-950",
+    amber: "bg-amber-400 text-zinc-950",
+  }[dailyState.tone];
+
   return (
-    <div className="h-full text-zinc-100 flex flex-col relative z-10 overflow-hidden">
-      <div className="flex flex-1 min-h-0">
-        <main className="flex-1 px-6 py-4 overflow-hidden">
-          <div className="max-w-5xl mx-auto space-y-5">
-            <h1 className="font-pixel text-3xl sm:text-4xl">
-              welcome back <span className="text-indigo-400">{displayName.toLowerCase()}</span>
-            </h1>
+    <div className="text-zinc-100 relative z-10">
+      <main className="max-w-6xl mx-auto px-6 py-6 space-y-6">
+        <h1 className="font-pixel text-2xl sm:text-3xl">
+          welcome back <span className="text-indigo-400">{displayName.toLowerCase()}</span>
+        </h1>
 
-            <section className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-              <FeatureCard
-                label="DAILY CHALLENGE"
-                href="/daily"
-                state={
-                  !userId ? "LOCKED"
-                  : myAttempt ? (myAttempt.success ? "SOLVED" : "MISSED")
-                  : "READY"
-                }
-                stateTone={
-                  !userId ? "amber"
-                  : myAttempt?.success ? "emerald"
-                  : myAttempt ? "fuchsia"
-                  : "emerald"
-                }
-              />
-              <FeatureCard
-                label="COSMETIC SHOP"
-                href="/shop"
-                state="OPEN"
-                stateTone="emerald"
-              />
-              <FeatureCard
-                label="DAILY REWARDS"
-                href={userId ? "/rewards" : "/login?next=/rewards"}
-                state={!userId ? "LOCKED" : myReward ? "OPENED" : "READY"}
-                stateTone={!userId ? "amber" : myReward ? "zinc" : "amber"}
-              />
-              <FeatureCard
-                label="ACHIEVEMENTS"
-                href={userId ? "/profile#achievements" : "/login?next=/profile"}
-                state={userId ? `${achievementCount}/${BADGES.length}` : "LOCKED"}
-                stateTone={userId ? "emerald" : "amber"}
-              />
-              <RankCard rankLabel={rank.label} progress={rank.progress} isMax={rank.isMax} />
-            </section>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          {/* Hero: Today's Incident */}
+          <section className="lg:col-span-2 border-2 border-indigo-500 bg-zinc-900 p-6 sm:p-8 relative overflow-hidden">
+            <div className="absolute -top-12 -right-12 w-48 h-48 bg-indigo-500/10 blur-3xl pointer-events-none" />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-4">
+                <div className="font-pixel text-[10px] tracking-widest text-indigo-400">
+                  TODAY&apos;S INCIDENT
+                </div>
+                <div className="font-mono text-[10px] text-zinc-500">{dayKey}</div>
+              </div>
+              <h2 className="font-pixel text-2xl sm:text-3xl text-zinc-100 leading-snug">
+                &ldquo;{challenge.title}&rdquo;
+              </h2>
+              <p className="text-zinc-400 text-sm mt-3">{challenge.hint}</p>
 
-            <div className="flex flex-wrap justify-center gap-4 pt-4">
+              <div className="flex flex-wrap items-center gap-3 mt-5 text-xs">
+                <span className={`font-pixel text-[10px] tracking-widest px-2 py-1 border-2 ${diffTone}`}>
+                  {challenge.difficulty.toUpperCase()}
+                </span>
+                <span className="font-pixel text-[10px] tracking-widest px-2 py-1 border-2 border-zinc-700 text-zinc-300">
+                  {challenge.language.toUpperCase()}
+                </span>
+                <span className="text-zinc-500 font-mono">
+                  Best today:{" "}
+                  <span className="text-amber-300">
+                    {bestTimeMs != null ? `${(bestTimeMs / 1000).toFixed(1)}s` : "—"}
+                  </span>
+                </span>
+                <span className="text-zinc-500 font-mono">
+                  Solves:{" "}
+                  <span className="text-indigo-300">{dailySolves}</span>
+                </span>
+              </div>
+
               <Link
-                href="/play"
-                className="btn-press inline-block px-8 py-4 font-pixel text-sm border-2 border-zinc-950 bg-zinc-800 text-zinc-100"
+                href={dailyState.href}
+                className={`btn-press mt-6 inline-block px-8 py-3 font-pixel text-sm border-2 border-zinc-950 ${ctaCls}`}
               >
-                ▶ SOLO PLAY
-              </Link>
-              <Link
-                href="/matchmaking"
-                className="btn-press inline-block px-12 py-5 font-pixel text-base border-2 border-zinc-950 bg-indigo-500 text-zinc-950"
-              >
-                ▶ ENTER LOBBY
+                {dailyState.label}
               </Link>
             </div>
-          </div>
-        </main>
-      </div>
+          </section>
 
-      <footer className="border-t-2 border-zinc-800">
+          {/* Live Activity Feed */}
+          <section className="border-2 border-zinc-800 bg-zinc-900 flex flex-col">
+            <div className="px-4 py-3 border-b-2 border-zinc-800 flex items-center justify-between">
+              <div className="font-pixel text-xs text-indigo-400">LIVE FEED</div>
+              <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-500">
+                <span className="inline-block w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                live
+              </div>
+            </div>
+            <ul className="flex-1 divide-y divide-zinc-800 overflow-y-auto max-h-[360px]">
+              {feedItems.length === 0 && (
+                <li className="px-4 py-6 text-zinc-600 text-xs font-mono text-center">
+                  quiet… for now.
+                </li>
+              )}
+              {feedItems.map((it) => (
+                <li key={it.id} className="px-4 py-2 text-xs leading-snug">
+                  {it.text}
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
+
+        {/* Action row: solo + lobby */}
+        <div className="flex flex-wrap justify-center gap-4">
+          <Link
+            href="/play"
+            className="btn-press inline-block px-8 py-4 font-pixel text-sm border-2 border-zinc-950 bg-zinc-800 text-zinc-100"
+          >
+            ▶ SOLO PLAY
+          </Link>
+          <Link
+            href="/matchmaking"
+            className="btn-press inline-block px-12 py-5 font-pixel text-base border-2 border-zinc-950 bg-indigo-500 text-zinc-950"
+          >
+            ▶ ENTER LOBBY
+          </Link>
+        </div>
+
+        {/* Secondary cards */}
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <FeatureCard
+            label="COSMETIC SHOP"
+            href="/shop"
+            state="OPEN"
+            stateTone="emerald"
+          />
+          <FeatureCard
+            label="DAILY REWARDS"
+            href={userId ? "/rewards" : "/login?next=/rewards"}
+            state={!userId ? "LOCKED" : myReward ? "OPENED" : "READY"}
+            stateTone={!userId ? "amber" : myReward ? "zinc" : "amber"}
+          />
+          <FeatureCard
+            label="ACHIEVEMENTS"
+            href={userId ? "/profile#achievements" : "/login?next=/profile"}
+            state={userId ? `${achievementCount}/${BADGES.length}` : "LOCKED"}
+            stateTone={userId ? "emerald" : "amber"}
+          />
+          <RankCard rankLabel={rank.label} progress={rank.progress} isMax={rank.isMax} />
+        </section>
+      </main>
+
+      <footer className="border-t-2 border-zinc-800 mt-8">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center font-pixel text-[10px] text-zinc-500">
           <div>© {new Date().getFullYear()} BUGRUSH</div>
         </div>
       </footer>
     </div>
+  );
+}
+
+function FeedName({ name }: { name: string }) {
+  return (
+    <Link
+      href={`/u/${name.toLowerCase()}`}
+      className="text-zinc-100 font-semibold hover:text-indigo-300 transition"
+    >
+      {name}
+    </Link>
   );
 }
 
@@ -130,10 +329,10 @@ function FeatureCard({
   return (
     <Link
       href={href}
-      className="border-2 border-zinc-800 bg-zinc-900 p-5 hover:border-zinc-700 transition flex flex-col justify-between min-h-[120px]"
+      className="border-2 border-zinc-800 bg-zinc-900 p-4 hover:border-zinc-700 transition flex flex-col justify-between min-h-[96px]"
     >
-      <div className="font-pixel text-[11px] text-zinc-300 leading-tight">{label}</div>
-      <div className={`font-pixel text-base mt-4 ${stateColor}`}>{state}</div>
+      <div className="font-pixel text-[10px] text-zinc-300 leading-tight">{label}</div>
+      <div className={`font-pixel text-sm mt-3 ${stateColor}`}>{state}</div>
     </Link>
   );
 }
@@ -148,22 +347,14 @@ function RankCard({
   return (
     <Link
       href="/profile"
-      className="border-2 border-zinc-800 bg-zinc-900 p-5 hover:border-zinc-700 transition flex flex-col justify-between min-h-[120px]"
+      className="border-2 border-zinc-800 bg-zinc-900 p-4 hover:border-zinc-700 transition flex flex-col justify-between min-h-[96px]"
     >
-      <div className="font-pixel text-[11px] text-zinc-300 leading-tight">YOUR RANKING</div>
+      <div className="font-pixel text-[10px] text-zinc-300 leading-tight">YOUR RANKING</div>
       <div>
         <div className="font-pixel text-sm text-indigo-400 mt-2 truncate">{rankLabel}</div>
         {!isMax && (
-          <div className="mt-3 h-1.5 bg-zinc-950 border border-zinc-800">
-            <div
-              className="h-full bg-indigo-500"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        )}
-        {!isMax && (
-          <div className="text-[10px] text-zinc-500 font-mono mt-1">
-            {progress}/100 RP
+          <div className="mt-2 h-1 bg-zinc-950 border border-zinc-800">
+            <div className="h-full bg-indigo-500" style={{ width: `${progress}%` }} />
           </div>
         )}
       </div>
