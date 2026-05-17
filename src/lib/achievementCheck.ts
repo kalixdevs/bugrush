@@ -3,6 +3,7 @@ import { computeStreaks } from "./streaks";
 import { RANK_TIERS } from "./ranks";
 import { BADGES } from "./badges";
 import { publish } from "./realtime";
+import { hasTopic } from "./challenges";
 
 export async function checkAndUnlock(userId: string): Promise<string[]> {
   const [
@@ -129,17 +130,60 @@ export async function checkAndUnlock(userId: string): Promise<string[]> {
     if (isLoser) pvpLossStreak++; else break;
   }
 
-  // Time-of-day stats from runs.
-  const runTimes = await prisma.run.findMany({
+  // Time-of-day + hint stats from runs.
+  const runRows = await prisma.run.findMany({
     where: { userId },
-    select: { createdAt: true },
+    select: { createdAt: true, hintsRevealed: true },
   });
   let played3am = false;
   let lateRunCount = 0;
-  for (const r of runTimes) {
+  let maxHintsInRound = 0;
+  let totalHints = 0;
+  for (const r of runRows) {
     const h = r.createdAt.getUTCHours();
     if (h === 3) played3am = true;
     if (h <= 5) lateRunCount++;
+    if (r.hintsRevealed > maxHintsInRound) maxHintsInRound = r.hintsRevealed;
+    totalHints += r.hintsRevealed;
+  }
+
+  // Daily + match hint counts also feed totals + max-per-round.
+  const dailyHints = await prisma.dailyAttempt.findMany({
+    where: { userId },
+    select: { hintsRevealed: true, challengeId: true, success: true, timeMs: true },
+  });
+  for (const d of dailyHints) {
+    if (d.hintsRevealed > maxHintsInRound) maxHintsInRound = d.hintsRevealed;
+    totalHints += d.hintsRevealed;
+  }
+  const matchHints = await prisma.matchParticipant.findMany({
+    where: { userId, hintsRevealed: { gt: 0 } },
+    select: { hintsRevealed: true },
+  });
+  for (const m of matchHints) {
+    if (m.hintsRevealed > maxHintsInRound) maxHintsInRound = m.hintsRevealed;
+    totalHints += m.hintsRevealed;
+  }
+
+  // Topic-tagged solves from daily + match (Run doesn't store challenge id per solve).
+  const matchSolves = await prisma.matchParticipant.findMany({
+    where: { userId, score: { gt: 0 }, solveTimeMs: { not: null } },
+    include: { match: { select: { challengeId: true } } },
+  });
+  let missingSemicolon = false;
+  let nullSolves = 0;
+  for (const d of dailyHints) {
+    if (!d.success) continue;
+    if (hasTopic(d.challengeId, "syntax") && d.timeMs < 3000) missingSemicolon = true;
+    if (hasTopic(d.challengeId, "null")) nullSolves++;
+  }
+  for (const p of matchSolves) {
+    const cid = p.match.challengeId;
+    if (!cid) continue;
+    if (hasTopic(cid, "syntax") && p.solveTimeMs != null && p.solveTimeMs < 3000) {
+      missingSemicolon = true;
+    }
+    if (hasTopic(cid, "null")) nullSolves++;
   }
 
   const conditions: Record<string, boolean> = {
@@ -167,6 +211,10 @@ export async function checkAndUnlock(userId: string): Promise<string[]> {
     "clown-fiesta":        clownFiesta,
     "3am-deployment":      played3am,
     "caffeine-overflow":   lateRunCount >= 20,
+    "stack-overflowed":            maxHintsInRound >= 3,
+    "stack-overflow-tab-collector": totalHints >= 10,
+    "missing-semicolon":   missingSemicolon,
+    "null-and-void":       nullSolves >= 100,
   };
 
   const toUnlock: string[] = [];

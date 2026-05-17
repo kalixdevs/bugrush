@@ -8,6 +8,7 @@ type RunPayload = {
   roundSeconds: number | null;
   solveCap: number | null;
   endReason: Exclude<EndReason, null>;
+  hintsRevealed: number;
 };
 
 export async function recordRun(payload: RunPayload): Promise<boolean> {

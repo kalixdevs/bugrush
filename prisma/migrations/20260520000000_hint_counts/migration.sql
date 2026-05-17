@@ -1,0 +1,3 @@
+ALTER TABLE "run" ADD COLUMN "hintsRevealed" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "daily_attempt" ADD COLUMN "hintsRevealed" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "match_participant" ADD COLUMN "hintsRevealed" INTEGER NOT NULL DEFAULT 0;

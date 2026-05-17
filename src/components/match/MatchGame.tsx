@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
 import CodeEditor from "@/components/CodeEditor";
+import HintReveal from "@/components/HintReveal";
 import { challenges } from "@/lib/challenges";
 import { sfx } from "@/lib/sfx";
 import type { MatchView } from "./types";
@@ -18,6 +19,7 @@ export default function MatchGame({ match, viewerId }: Props) {
 
   const [draft, setDraft] = useState(challenge?.broken ?? "");
   const [submitting, setSubmitting] = useState(false);
+  const [hintsRevealed, setHintsRevealed] = useState(0);
   const startedAtMs = match.startedAt ? new Date(match.startedAt).getTime() : 0;
   const endsAtMs = startedAtMs + match.roundSeconds * 1000;
   const [now, setNow] = useState(0);
@@ -53,7 +55,7 @@ export default function MatchGame({ match, viewerId }: Props) {
       const res = await fetch(`/api/match/${match.id}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ submittedCode: draft }),
+        body: JSON.stringify({ submittedCode: draft, hintsRevealed }),
       });
       if (res.ok) {
         const data = await res.json() as { success?: boolean };
@@ -94,7 +96,7 @@ export default function MatchGame({ match, viewerId }: Props) {
 
       <section className="px-6 py-3 border-b-2 border-zinc-800 bg-zinc-950">
         <div className="text-lg font-medium">{challenge.title}</div>
-        <div className="text-sm text-zinc-500 mt-1">{challenge.hint}</div>
+        <HintReveal text={challenge.hint} resetKey={challenge.id} onReveal={() => setHintsRevealed((n) => n + 1)} />
       </section>
 
       <main className="flex-1 min-h-0 relative">

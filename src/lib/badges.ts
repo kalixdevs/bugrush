@@ -56,6 +56,14 @@ export const BADGES: Badge[] = [
   { id: "smurf-detected",      name: "Smurf Detected",    desc: "Beat a player 4+ ranks above you.",     letter: "S",  tone: "amber",   category: "event",   checkable: true },
   { id: "public-humiliation",  name: "Public Humiliation",desc: "Lose a PvP match in under 5 seconds.",  letter: "L",  tone: "fuchsia", category: "event",   checkable: true },
   { id: "clown-fiesta",        name: "Clown Fiesta",      desc: "Every player fails the same match.",    letter: "🤡", tone: "fuchsia", category: "event",   checkable: true },
+
+  // CONTENT — topic-based
+  { id: "missing-semicolon",   name: "Missing Semicolon", desc: "Solve a syntax bug in under 3 seconds.", letter: ";",  tone: "amber",   category: "content", checkable: true },
+  { id: "null-and-void",       name: "Null and Void",     desc: "Solve 100 null/undefined bugs.",         letter: "ø",  tone: "sky",     category: "content", checkable: true },
+
+  // SPECIAL — hint usage
+  { id: "stack-overflowed",            name: "Stack Overflowed", desc: "Reveal 3+ hints in a single round.", letter: "💡", tone: "fuchsia", category: "special", checkable: true },
+  { id: "stack-overflow-tab-collector",name: "SO Tab Collector", desc: "Reveal 10 hints lifetime.",          letter: "T",  tone: "sky",     category: "special", checkable: true },
 ];
 
 export const TONE_CLASSES: Record<BadgeTone, { bg: string; text: string; ring: string }> = {

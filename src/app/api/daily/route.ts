@@ -15,6 +15,7 @@ const BodySchema = z.object({
   success: z.boolean(),
   timeMs: z.number().int().min(0).max(DAILY_DURATION_MS + 5_000),
   submittedCode: z.string().max(10_000).optional(),
+  hintsRevealed: z.number().int().nonnegative().max(10).default(0),
 });
 
 export async function POST(req: Request) {
@@ -64,6 +65,7 @@ export async function POST(req: Request) {
         success,
         timeMs: parsed.data.timeMs,
         score,
+        hintsRevealed: parsed.data.hintsRevealed,
       },
     });
     const event = await getActiveEvent();

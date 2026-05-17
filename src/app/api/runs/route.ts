@@ -17,6 +17,7 @@ const RunSchema = z.object({
   roundSeconds: z.number().int().positive().nullable(),
   solveCap: z.number().int().positive().nullable(),
   endReason: z.enum(["time", "manual", "cap", "hardcore-fail"]),
+  hintsRevealed: z.number().int().nonnegative().max(10_000).default(0),
 });
 
 export async function POST(req: Request) {

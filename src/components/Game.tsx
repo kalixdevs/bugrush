@@ -6,12 +6,13 @@ import { useGame } from "@/lib/store";
 import { useSession } from "@/lib/auth-client";
 import CodeEditor from "./CodeEditor";
 import Lobby from "./Lobby";
+import HintReveal from "./HintReveal";
 
 export default function Game() {
   const {
     status, config, current, failedOn, draft, score, solves, timeLeft,
     lastResult, endReason, personalBest, isNewBest,
-    setDraft, submit, skip, tick, endRound, toLobby, reset,
+    setDraft, submit, skip, tick, endRound, toLobby, reset, bumpHints,
   } = useGame();
   const { data: session } = useSession();
 
@@ -206,7 +207,7 @@ export default function Game() {
 
       <section className="px-6 py-4 border-b-2 border-zinc-800 bg-zinc-950">
         <div className="text-lg font-medium">{current.title}</div>
-        <div className="text-sm text-zinc-500 mt-1">{current.hint}</div>
+        <HintReveal text={current.hint} free={!isTimed} resetKey={current.id} onReveal={bumpHints} />
       </section>
 
       <main className="flex-1 min-h-0 relative">

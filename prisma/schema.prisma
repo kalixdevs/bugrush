@@ -96,6 +96,7 @@ model Run {
   roundSeconds Int?
   solveCap     Int?
   endReason    String
+  hintsRevealed Int     @default(0)
   createdAt    DateTime @default(now())
 
   @@index([score(sort: Desc)])
@@ -112,6 +113,7 @@ model DailyAttempt {
   success     Boolean
   timeMs      Int
   score       Int
+  hintsRevealed Int    @default(0)
   createdAt   DateTime @default(now())
 
   @@unique([userId, dayKey])
@@ -297,6 +299,7 @@ model MatchParticipant {
   score         Int      @default(0)
   solveTimeMs   Int?
   submittedCode String?
+  hintsRevealed Int      @default(0)
   joinedAt      DateTime @default(now())
 
   @@unique([matchId, userId])

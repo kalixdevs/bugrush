@@ -7,6 +7,7 @@ import { DAILY_DURATION_MS } from "@/lib/daily";
 import { isCorrect } from "@/lib/validate";
 import { sfx } from "@/lib/sfx";
 import CodeEditor from "./CodeEditor";
+import HintReveal from "./HintReveal";
 
 type Props = { challenge: Challenge };
 
@@ -17,6 +18,7 @@ export default function DailyGame({ challenge }: Props) {
   const [draft, setDraft] = useState(challenge.broken);
   const [timeLeft, setTimeLeft] = useState(DURATION_S);
   const [submitting, setSubmitting] = useState(false);
+  const [hintsRevealed, setHintsRevealed] = useState(0);
   const startedAtRef = useRef<number>(0);
   const finishedRef = useRef(false);
 
@@ -36,7 +38,7 @@ export default function DailyGame({ challenge }: Props) {
       await fetch("/api/daily", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ success, timeMs, submittedCode: success ? draft : undefined }),
+        body: JSON.stringify({ success, timeMs, submittedCode: success ? draft : undefined, hintsRevealed }),
         credentials: "include",
       });
     } catch {}
@@ -99,7 +101,7 @@ export default function DailyGame({ challenge }: Props) {
 
       <section className="px-6 py-4 border-b-2 border-zinc-800 bg-zinc-950">
         <div className="text-lg font-medium">{challenge.title}</div>
-        <div className="text-sm text-zinc-500 mt-1">{challenge.hint}</div>
+        <HintReveal text={challenge.hint} resetKey={challenge.id} onReveal={() => setHintsRevealed((n) => n + 1)} />
       </section>
 
       <main className="flex-1 min-h-0 relative">

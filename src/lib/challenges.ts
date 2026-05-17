@@ -831,3 +831,83 @@ end`,
 end`,
   },
 ];
+
+// Topic registry — tags live outside the challenge entries so the bulk of
+// the file stays readable.
+export const TOPICS = [
+  "syntax", "null", "async", "closures", "off-by-one",
+  "loops", "comparison", "scope", "mutation", "string",
+  "type", "io", "memory",
+] as const;
+export type Topic = (typeof TOPICS)[number];
+
+const CHALLENGE_TOPICS: Record<string, Topic[]> = {
+  // Original 6
+  "assign-vs-compare":       ["comparison", "syntax"],
+  "off-by-one":              ["loops", "off-by-one"],
+  "async-no-await":          ["async"],
+  "python-mutable-default":  ["mutation"],
+  "shadowed-var":            ["scope"],
+  "missing-return":          ["syntax"],
+  // JS expansion
+  "js-loose-equality":       ["comparison", "type"],
+  "js-var-in-loop":          ["scope", "closures", "loops"],
+  "js-float-compare":        ["comparison", "type"],
+  "js-foreach-async":        ["async", "loops"],
+  "js-array-reverse-mutates":["mutation"],
+  "js-typeof-null":          ["null", "type", "comparison"],
+  "js-array-sort-numbers":   ["type"],
+  "js-promise-then-no-return":["async"],
+  "js-this-in-setinterval":  ["scope"],
+  "js-json-parse-date":      ["type", "string"],
+  // Python expansion
+  "py-is-none":              ["null", "comparison"],
+  "py-range-off-by-one":     ["loops", "off-by-one"],
+  "py-print-vs-return":      ["io", "syntax"],
+  "py-late-binding":         ["closures", "scope"],
+  "py-dict-keyerror":        ["null", "type"],
+  "py-shallow-copy":         ["mutation"],
+  "py-iterator-exhausted":   ["loops", "memory"],
+  "py-is-vs-eq-string":      ["comparison", "string"],
+  "py-string-plus-int":      ["type", "string"],
+  "py-list-index-missing":   ["null"],
+  "py-modify-while-iterating":["loops", "mutation"],
+  "py-class-var-shared":     ["scope", "mutation"],
+  "py-shallow-vs-deep-copy": ["mutation"],
+  // TypeScript
+  "ts-non-null-assertion":   ["null", "type"],
+  "ts-narrow-typeof-null":   ["null", "type", "comparison"],
+  "ts-array-find-undefined": ["null", "type"],
+  "ts-as-cast-vs-narrow":    ["type"],
+  "ts-readonly-mutation":    ["mutation", "type"],
+  "ts-never-return-type":    ["type"],
+  // C++
+  "cpp-assignment-in-if":    ["syntax", "comparison"],
+  "cpp-vector-bracket-vs-at":["memory"],
+  "cpp-pass-string-by-value":["memory", "string"],
+  "cpp-cout-no-flush":       ["io"],
+  "cpp-dangling-reference":  ["memory", "scope"],
+  "cpp-erase-during-iteration":["loops", "mutation"],
+  // C#
+  "cs-int-division":         ["type"],
+  "cs-null-method-call":     ["null"],
+  "cs-async-void":           ["async"],
+  "cs-linq-deferred":        ["loops", "mutation"],
+  "cs-using-missing":        ["memory", "io"],
+  "cs-result-deadlock":      ["async"],
+  // Ruby
+  "rb-nil-empty":            ["null", "string"],
+  "rb-puts-vs-return":       ["io", "syntax"],
+  "rb-each-vs-map":          ["loops", "syntax"],
+  "rb-single-quote-interp":  ["string", "syntax"],
+  "rb-frozen-mutation":      ["mutation", "string"],
+  "rb-yield-no-block":       ["syntax"],
+};
+
+export function topicsFor(challengeId: string): Topic[] {
+  return CHALLENGE_TOPICS[challengeId] ?? [];
+}
+
+export function hasTopic(challengeId: string, topic: Topic): boolean {
+  return topicsFor(challengeId).includes(topic);
+}

@@ -14,7 +14,10 @@ import { scoreFor, determineWinner } from "@/lib/match";
 import { checkAndUnlock } from "@/lib/achievementCheck";
 import { applyEventMultiplier, getActiveEvent } from "@/lib/events";
 
-const Body = z.object({ submittedCode: z.string().min(0).max(10_000) });
+const Body = z.object({
+  submittedCode: z.string().min(0).max(10_000),
+  hintsRevealed: z.number().int().nonnegative().max(10).default(0),
+});
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -66,6 +69,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       score,
       solveTimeMs,
       submittedCode: parsed.data.submittedCode,
+      hintsRevealed: parsed.data.hintsRevealed,
     },
   });
 

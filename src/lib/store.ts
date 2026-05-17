@@ -34,6 +34,7 @@ type State = {
   score: number;
   solves: number;
   timeLeft: number;
+  hintsRevealed: number;
   lastResult: "ok" | "bad" | null;
   endReason: EndReason;
   personalBest: number | null;
@@ -49,6 +50,7 @@ type Actions = {
   endRound: () => void;
   toLobby: () => void;
   reset: () => void;
+  bumpHints: () => void;
   loadPersonalBest: () => Promise<void>;
 };
 
@@ -73,6 +75,7 @@ function finishSideEffects(
   score: number,
   solves: number,
   endReason: Exclude<EndReason, null>,
+  hintsRevealed: number,
   setBest: (next: { personalBest: number; isNewBest: boolean }) => void,
   currentBest: number | null,
 ) {
@@ -84,6 +87,7 @@ function finishSideEffects(
     roundSeconds: cfg.roundSeconds,
     solveCap: cfg.solveCap,
     endReason,
+    hintsRevealed,
   }).then((ok) => {
     if (!ok) return;
     if (currentBest == null || score > currentBest) {
@@ -102,6 +106,7 @@ export const useGame = create<State & Actions>((set, get) => ({
   score: 0,
   solves: 0,
   timeLeft: 0,
+  hintsRevealed: 0,
   lastResult: null,
   endReason: null,
   personalBest: null,
@@ -122,6 +127,7 @@ export const useGame = create<State & Actions>((set, get) => ({
       score: 0,
       solves: 0,
       timeLeft: cfg.roundSeconds ?? 0,
+      hintsRevealed: 0,
       lastResult: null,
       endReason: null,
       isNewBest: false,
@@ -145,7 +151,7 @@ export const useGame = create<State & Actions>((set, get) => ({
         });
         finishSideEffects(
           config, score, solves, "hardcore-fail",
-          (n) => set(n), get().personalBest,
+          get().hintsRevealed, (n) => set(n), get().personalBest,
         );
         sfx.fail();
         sfx.finish("lose");
@@ -175,7 +181,7 @@ export const useGame = create<State & Actions>((set, get) => ({
       });
       finishSideEffects(
         config, finalScore, nextSolves, "cap",
-        (n) => set(n), get().personalBest,
+        get().hintsRevealed, (n) => set(n), get().personalBest,
       );
       sfx.solve();
       sfx.finish("win");
@@ -211,11 +217,11 @@ export const useGame = create<State & Actions>((set, get) => ({
   },
 
   tick: () => {
-    const { timeLeft, status, config, score, solves, personalBest } = get();
+    const { timeLeft, status, config, score, solves, personalBest, hintsRevealed } = get();
     if (status !== "playing" || !config || config.roundSeconds == null) return;
     if (timeLeft <= 1) {
       set({ timeLeft: 0, status: "finished", endReason: "time" });
-      finishSideEffects(config, score, solves, "time", (n) => set(n), personalBest);
+      finishSideEffects(config, score, solves, "time", hintsRevealed, (n) => set(n), personalBest);
       sfx.finish("win");
       return;
     }
@@ -223,12 +229,14 @@ export const useGame = create<State & Actions>((set, get) => ({
   },
 
   endRound: () => {
-    const { status, config, score, solves, personalBest } = get();
+    const { status, config, score, solves, personalBest, hintsRevealed } = get();
     if (status !== "playing" || !config) return;
     set({ status: "finished", endReason: "manual" });
-    finishSideEffects(config, score, solves, "manual", (n) => set(n), personalBest);
+    finishSideEffects(config, score, solves, "manual", hintsRevealed, (n) => set(n), personalBest);
     sfx.finish("win");
   },
+
+  bumpHints: () => set((s) => ({ hintsRevealed: s.hintsRevealed + 1 })),
 
   toLobby: () =>
     set({
@@ -240,6 +248,7 @@ export const useGame = create<State & Actions>((set, get) => ({
       score: 0,
       solves: 0,
       timeLeft: 0,
+      hintsRevealed: 0,
       lastResult: null,
       endReason: null,
     }),
@@ -255,6 +264,7 @@ export const useGame = create<State & Actions>((set, get) => ({
       score: 0,
       solves: 0,
       timeLeft: 0,
+      hintsRevealed: 0,
       lastResult: null,
       endReason: null,
       isNewBest: false,
