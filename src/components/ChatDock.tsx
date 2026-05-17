@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRealtime } from "@/lib/realtimeClient";
 import { useSession } from "@/lib/auth-client";
 import Avatar from "./Avatar";
+import BadgeIcon from "./BadgeIcon";
+import { findBadge } from "@/lib/badges";
 
 type MatchMeta = {
   matchId: string;
@@ -315,6 +317,41 @@ function Message({ m, isAdmin }: { m: Msg; isAdmin: boolean }) {
       body: JSON.stringify({ minutes }),
     });
   };
+
+  if (isAchievement) {
+    const meta = (m.meta ?? {}) as { badgeId?: string; badgeName?: string };
+    const badge = meta.badgeId ? findBadge(meta.badgeId) : undefined;
+    const badgeName = badge?.name ?? meta.badgeName ?? "achievement";
+    return (
+      <div className="group relative border-2 border-amber-400 bg-amber-400/10 px-3 py-2 flex items-center gap-3">
+        {badge && (
+          <div className="flex-shrink-0">
+            <BadgeIcon badge={badge} size={36} />
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="font-pixel text-[9px] tracking-widest text-amber-400">
+            ACHIEVEMENT UNLOCKED
+          </div>
+          <div className="text-sm text-amber-100 font-semibold leading-snug">
+            <span className="text-amber-200">{m.name}</span>{" "}
+            <span className="text-amber-100/70">earned</span>{" "}
+            <span className="text-amber-100">{badgeName}</span>
+          </div>
+        </div>
+        <span className="text-[10px] text-amber-400/60 font-mono self-start">{time}</span>
+        {isAdmin && (
+          <button
+            onClick={deleteMsg}
+            className="absolute top-1 right-8 opacity-0 group-hover:opacity-100 text-fuchsia-400 hover:text-fuchsia-300 text-xs px-1 transition"
+            title="Delete message"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="group flex gap-2.5 relative">

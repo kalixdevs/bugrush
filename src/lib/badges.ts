@@ -43,10 +43,19 @@ export const BADGES: Badge[] = [
   { id: "lightning-fingers",   name: "Lightning Fingers", desc: "Fix a bug in under 3 seconds.",         letter: "⚡", tone: "amber",   category: "special", checkable: true },
   { id: "frame-perfect",       name: "Frame Perfect",     desc: "Correct fix with <1s remaining.",       letter: "F",  tone: "fuchsia", category: "special", checkable: true },
 
+  // SPECIAL — sleep-deprived & burnout (memes)
+  { id: "3am-deployment",      name: "3AM Deployment",    desc: "Play between 3–4 AM UTC.",              letter: "3A", tone: "sky",     category: "special", checkable: true },
+  { id: "caffeine-overflow",   name: "Caffeine Overflow", desc: "Play 20 matches after midnight UTC.",   letter: "☕", tone: "sky",     category: "special", checkable: true },
+  { id: "burnout-simulator",   name: "Burnout Simulator", desc: "Lose 5 ranked matches in a row.",       letter: "⚠",  tone: "fuchsia", category: "special", checkable: true },
+
   // EVENT — daily / pvp / future
   { id: "daily-first",         name: "Day One",           desc: "Solve your first daily.",               letter: "D",  tone: "amber",   category: "event",   checkable: true },
   { id: "race-condition",      name: "Race Condition",    desc: "Win a PvP duel by <1s.",                letter: "R",  tone: "fuchsia", category: "event",   checkable: true },
   { id: "undefeated",          name: "Undefeated",        desc: "10 ranked PvP wins in a row.",          letter: "U",  tone: "fuchsia", category: "event",   checkable: true },
+  { id: "sweaty",              name: "Sweaty",            desc: "25 ranked PvP wins in a row.",          letter: "25", tone: "fuchsia", category: "event",   checkable: true },
+  { id: "smurf-detected",      name: "Smurf Detected",    desc: "Beat a player 4+ ranks above you.",     letter: "S",  tone: "amber",   category: "event",   checkable: true },
+  { id: "public-humiliation",  name: "Public Humiliation",desc: "Lose a PvP match in under 5 seconds.",  letter: "L",  tone: "fuchsia", category: "event",   checkable: true },
+  { id: "clown-fiesta",        name: "Clown Fiesta",      desc: "Every player fails the same match.",    letter: "🤡", tone: "fuchsia", category: "event",   checkable: true },
 ];
 
 export const TONE_CLASSES: Record<BadgeTone, { bg: string; text: string; ring: string }> = {

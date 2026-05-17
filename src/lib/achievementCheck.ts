@@ -68,7 +68,13 @@ export async function checkAndUnlock(userId: string): Promise<string[]> {
   // PvP-derived data
   const myParticipations = await prisma.matchParticipant.findMany({
     where: { userId },
-    include: { match: { include: { participants: true } } },
+    include: {
+      match: {
+        include: {
+          participants: { include: { user: { select: { rankPoints: true } } } },
+        },
+      },
+    },
     orderBy: { joinedAt: "desc" },
   });
   const finishedMatches = myParticipations.filter(
@@ -77,30 +83,63 @@ export async function checkAndUnlock(userId: string): Promise<string[]> {
   let lightningFingers = false;
   let framePerfect = false;
   let raceCondition = false;
+  let publicHumiliation = false;
+  let clownFiesta = false;
+  let smurfDetected = false;
   for (const p of finishedMatches) {
     if (p.score > 0 && p.solveTimeMs != null) {
       if (p.solveTimeMs < 3000) lightningFingers = true;
       const remaining = p.match.roundSeconds * 1000 - p.solveTimeMs;
       if (remaining > 0 && remaining < 1000) framePerfect = true;
-      const isWinner = p.match.winnerTeam != null && p.team === p.match.winnerTeam;
-      if (isWinner) {
-        const opponents = p.match.participants.filter((x) => x.team !== p.team);
-        const oppEarliest = opponents
-          .filter((x) => x.solveTimeMs != null && x.score > 0)
-          .map((x) => x.solveTimeMs!)
-          .sort((a, b) => a - b)[0];
-        if (oppEarliest != null && Math.abs(oppEarliest - p.solveTimeMs) < 1000) {
-          raceCondition = true;
-        }
+    }
+    const isWinner = p.match.winnerTeam != null && p.team === p.match.winnerTeam;
+    const isLoser = p.match.winnerTeam != null && p.team !== p.match.winnerTeam;
+    const allSolves = p.match.participants
+      .filter((x) => x.solveTimeMs != null && x.score > 0)
+      .map((x) => ({ t: x.solveTimeMs!, team: x.team }));
+    if (allSolves.length === 0) clownFiesta = true;
+    if (isWinner && p.solveTimeMs != null && p.score > 0) {
+      const opponents = allSolves.filter((s) => s.team !== p.team);
+      if (opponents.length > 0) {
+        const oppEarliest = opponents.sort((a, b) => a.t - b.t)[0];
+        if (Math.abs(oppEarliest.t - p.solveTimeMs) < 1000) raceCondition = true;
+      }
+      const opps = p.match.participants.filter((x) => x.team !== p.team);
+      for (const o of opps) {
+        if (o.user.rankPoints >= rp + 400) { smurfDetected = true; break; }
       }
     }
+    if (isLoser) {
+      const winners = allSolves.filter((s) => s.team === p.match.winnerTeam);
+      const winnerEarliest = winners.length > 0
+        ? winners.sort((a, b) => a.t - b.t)[0].t
+        : null;
+      if (winnerEarliest != null && winnerEarliest < 5000) publicHumiliation = true;
+    }
   }
-  // PvP win streak (most recent first)
+  // PvP win/loss streak (most recent first)
   let pvpWinStreak = 0;
+  let pvpLossStreak = 0;
   for (const p of finishedMatches) {
     const isWinner = p.match.winnerTeam != null && p.team === p.match.winnerTeam;
-    if (isWinner) pvpWinStreak++;
-    else break;
+    if (isWinner) pvpWinStreak++; else break;
+  }
+  for (const p of finishedMatches) {
+    const isLoser = p.match.winnerTeam != null && p.team !== p.match.winnerTeam;
+    if (isLoser) pvpLossStreak++; else break;
+  }
+
+  // Time-of-day stats from runs.
+  const runTimes = await prisma.run.findMany({
+    where: { userId },
+    select: { createdAt: true },
+  });
+  let played3am = false;
+  let lateRunCount = 0;
+  for (const r of runTimes) {
+    const h = r.createdAt.getUTCHours();
+    if (h === 3) played3am = true;
+    if (h <= 5) lateRunCount++;
   }
 
   const conditions: Record<string, boolean> = {
@@ -121,6 +160,13 @@ export async function checkAndUnlock(userId: string): Promise<string[]> {
     "frame-perfect":       framePerfect,
     "race-condition":      raceCondition,
     "undefeated":          pvpWinStreak >= 10,
+    "sweaty":              pvpWinStreak >= 25,
+    "burnout-simulator":   pvpLossStreak >= 5,
+    "smurf-detected":      smurfDetected,
+    "public-humiliation":  publicHumiliation,
+    "clown-fiesta":        clownFiesta,
+    "3am-deployment":      played3am,
+    "caffeine-overflow":   lateRunCount >= 20,
   };
 
   const toUnlock: string[] = [];
