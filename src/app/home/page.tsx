@@ -46,7 +46,7 @@ export default async function HomePage() {
       <TopStrip points={points} loggedIn={!!userId} />
 
       <div className="flex flex-1 min-h-0">
-        <main className="flex-1 px-6 py-10 overflow-y-auto">
+        <main className="flex-1 px-6 py-6">
           <div className="max-w-5xl mx-auto space-y-8">
             <h1 className="font-pixel text-3xl sm:text-4xl">
               welcome back <span className="text-indigo-400">{displayName.toLowerCase()}</span>

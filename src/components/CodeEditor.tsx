@@ -34,6 +34,19 @@ export default function CodeEditor({ value, language, onChange }: Props) {
         smoothScrolling: true,
         automaticLayout: true,
         tabSize: 2,
+        overviewRulerLanes: 0,
+        overviewRulerBorder: false,
+        hideCursorInOverviewRuler: true,
+        scrollbar: {
+          vertical: "auto",
+          horizontal: "auto",
+          verticalScrollbarSize: 8,
+          horizontalScrollbarSize: 8,
+          useShadows: false,
+        },
+        guides: { indentation: false },
+        folding: false,
+        lineNumbersMinChars: 3,
       }}
     />
   );
