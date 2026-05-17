@@ -3,10 +3,24 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./db";
 import { generateUniqueHandle } from "./handle";
 
+function expandWww(url: string): string[] {
+  try {
+    const u = new URL(url);
+    const host = u.host;
+    if (host.startsWith("www.")) {
+      return [url, `${u.protocol}//${host.slice(4)}`];
+    }
+    return [url, `${u.protocol}//www.${host}`];
+  } catch {
+    return [url];
+  }
+}
+
+const baseUrl = process.env.BETTER_AUTH_URL;
 const trustedOrigins = [
-  process.env.BETTER_AUTH_URL,
+  ...(baseUrl ? expandWww(baseUrl) : []),
   "http://localhost:3000",
-].filter((u): u is string => !!u);
+];
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
