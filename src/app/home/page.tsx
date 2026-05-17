@@ -125,14 +125,16 @@ function TopStrip({ points, loggedIn }: { points: number; loggedIn: boolean }) {
         </Link>
         <div className="flex items-center gap-4 text-xs">
           {loggedIn && <PointsBadge value={points} />}
-          <Link href="/leaderboard" title="Leaderboard" className="opacity-80 hover:opacity-100 transition flex items-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icons/trophy.svg" alt="Leaderboard" className="h-8 w-auto" />
-          </Link>
-          <Link href="/daily" title="Daily challenge" className="opacity-80 hover:opacity-100 transition flex items-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icons/dailychallange.svg" alt="Daily" className="h-8 w-auto" />
-          </Link>
+          <div className="flex items-center gap-1">
+            <Link href="/leaderboard" title="Leaderboard" className="opacity-80 hover:opacity-100 transition flex items-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icons/trophy.svg" alt="Leaderboard" className="h-8 w-auto" />
+            </Link>
+            <Link href="/daily" title="Daily challenge" className="opacity-80 hover:opacity-100 transition flex items-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icons/dailychallange.svg" alt="Daily" className="h-8 w-auto" />
+            </Link>
+          </div>
           <AuthNav />
         </div>
       </div>
