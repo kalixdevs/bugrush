@@ -327,12 +327,16 @@ function Message({ m, isAdmin }: { m: Msg; isAdmin: boolean }) {
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-          {showcase && <BadgeIcon badge={showcase} size={14} />}
-          <span className={`text-sm font-semibold truncate ${m.senderNameEffect ?? ""} ${isAchievement ? "text-amber-300" : isSenderAdmin ? "text-amber-300" : "text-zinc-100"}`}>
+          {showcase && <BadgeIcon badge={showcase} size={18} />}
+          <span
+            className={`text-sm font-semibold truncate ${isSenderAdmin ? "name-admin" : m.senderNameEffect ?? ""} ${
+              isAchievement ? "text-amber-300" : isSenderAdmin ? "text-purple-400" : "text-zinc-100"
+            }`}
+          >
             {m.name}
           </span>
           {isSenderAdmin && (
-            <span className="font-pixel text-[8px] tracking-widest px-1.5 py-0.5 border-2 border-amber-400 text-amber-300 leading-none">
+            <span className="font-pixel text-[8px] tracking-widest px-1.5 py-0.5 border-2 border-purple-400 text-purple-300 leading-none">
               ADMIN
             </span>
           )}
