@@ -515,7 +515,7 @@ export default function ChatDock() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-4 left-4 z-50 btn-press px-3 py-2 font-pixel text-[10px] border-2 border-zinc-950 bg-indigo-500 text-zinc-950 relative"
+        className="fixed bottom-4 left-4 z-50 btn-press px-3 py-2 font-pixel text-[10px] border-2 border-zinc-950 bg-indigo-500 text-zinc-950"
         title="Show chat"
       >
         ▶ CHAT
