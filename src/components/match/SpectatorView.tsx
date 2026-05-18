@@ -31,7 +31,7 @@ export default function SpectatorView({ match }: Props) {
 
   return (
     <div className="h-[calc(100vh-3.5rem)] flex flex-col">
-      <header className="border-b-2 border-zinc-800 bg-zinc-950 px-6 py-3 flex items-center justify-between">
+      <header className="border-b-2 border-zinc-800 bg-zinc-950 px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
         <div className="font-pixel text-xs text-indigo-400">
           ● SPECTATING · {match.mode.toUpperCase()}
         </div>

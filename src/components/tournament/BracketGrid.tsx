@@ -76,7 +76,7 @@ export default function BracketGrid({ size, slots, brackets }: Props) {
                   <div
                     className={`border-2 ${
                       live ? "border-indigo-500" : done ? "border-zinc-700" : "border-zinc-800"
-                    } bg-zinc-900 w-48`}
+                    } bg-zinc-900 w-36 sm:w-44 md:w-48`}
                   >
                     <Slot label={p1} winner={w1} highlight={!!cell.player1Id && cell.winnerUserId === null} />
                     <div className="h-px bg-zinc-800" />
@@ -99,7 +99,7 @@ export default function BracketGrid({ size, slots, brackets }: Props) {
         {finalCell && finalCell.winnerUserId && (
           <div className="flex flex-col justify-center pl-2">
             <div className="font-pixel text-[10px] text-amber-400 tracking-widest mb-2">CHAMPION</div>
-            <div className="border-2 border-amber-400 bg-amber-400/10 px-4 py-3 w-48">
+            <div className="border-2 border-amber-400 bg-amber-400/10 px-4 py-3 w-36 sm:w-44 md:w-48">
               <div className="font-pixel text-sm text-amber-300">
                 {labelFor(finalCell.winnerUserId, slots, userMap)}
               </div>

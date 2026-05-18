@@ -55,16 +55,16 @@ export default function TopStrip() {
         <Link href="/home" className="font-pixel text-indigo-400 text-xs tracking-widest">
           BUGRUSH
         </Link>
-        <div className="flex items-center gap-4 text-xs">
+        <div className="flex items-center gap-2 sm:gap-4 text-xs">
           {me?.loggedIn && <PointsBadge value={me.points} />}
           <div className="flex items-center">
             <Link href="/leaderboard" title="Leaderboard" className="opacity-80 hover:opacity-100 transition flex items-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icons/trophy.svg" alt="Leaderboard" className="h-10 w-auto -mx-1" />
+              <img src="/icons/trophy.svg" alt="Leaderboard" className="h-8 sm:h-10 w-auto -mx-1" />
             </Link>
             <Link href="/daily" title="Daily challenge" className="opacity-80 hover:opacity-100 transition flex items-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icons/dailychallange.svg" alt="Daily" className="h-10 w-auto -mx-1" />
+              <img src="/icons/dailychallange.svg" alt="Daily" className="h-8 sm:h-10 w-auto -mx-1" />
             </Link>
           </div>
           <AuthNav />

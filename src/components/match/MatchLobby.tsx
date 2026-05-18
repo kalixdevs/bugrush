@@ -37,7 +37,9 @@ export default function MatchLobby({ match, viewerId }: Props) {
     <main className="max-w-5xl mx-auto px-6 py-10 space-y-8">
       <div className="text-center">
         <div className="font-mono text-xs text-indigo-400 mb-2">{`> ${match.id.slice(0, 12)}`}</div>
-        <h1 className="font-pixel text-3xl">{match.mode.toUpperCase()} · {match.language.toUpperCase()} · {match.difficulty.toUpperCase()}</h1>
+        <h1 className="font-pixel text-xl sm:text-2xl lg:text-3xl break-words">
+          {match.mode.toUpperCase()} · {match.language.toUpperCase()} · {match.difficulty.toUpperCase()}
+        </h1>
         <div className="font-pixel text-[11px] text-zinc-500 mt-2">
           {isCancelled ? "MATCH CANCELLED" : "WAITING ROOM"} · {match.roundSeconds}s
         </div>

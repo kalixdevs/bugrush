@@ -304,7 +304,7 @@ export default async function HomePage() {
         </div>
 
         {/* Secondary cards */}
-        <section className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <section className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
           <RankCard
             rankLabel={rank.label}
             progress={rank.progress}
@@ -455,7 +455,7 @@ function PulseStrip({
   inMatches: number;
 }) {
   return (
-    <div className="flex items-center gap-4 text-[10px] font-pixel tracking-widest border-2 border-zinc-800 bg-zinc-950 px-3 py-2">
+    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-[10px] font-pixel tracking-widest border-2 border-zinc-800 bg-zinc-950 px-3 py-2">
       <span className="flex items-center gap-1.5">
         <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
         <span className="text-zinc-500">ACTIVE TODAY</span>

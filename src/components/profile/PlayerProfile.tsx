@@ -233,7 +233,7 @@ export default function PlayerProfile({ data, ownProfile, showcaseBadgeId }: Pro
         </section>
       ))}
 
-      <section className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <section className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
         <StatCard label="RUNS" value={runCount.toString()} />
         <StatCard label="BUGS" value={totalSolves.toString()} />
         <StatCard label="BEST" value={bestScore.toString()} accent="emerald" />
@@ -326,8 +326,8 @@ export default function PlayerProfile({ data, ownProfile, showcaseBadgeId }: Pro
             )}
           </div>
         ) : (
-          <div className="border-2 border-zinc-800 bg-zinc-900 overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="border-2 border-zinc-800 bg-zinc-900 overflow-x-auto">
+            <table className="w-full text-sm min-w-[560px]">
               <thead className="bg-zinc-950 border-b-2 border-zinc-800">
                 <tr className="font-pixel text-[10px] text-zinc-500">
                   <th className="text-left px-4 py-3">WHEN</th>

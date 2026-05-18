@@ -56,7 +56,7 @@ export default async function ShopPage() {
             <section key={s.id}>
               <div className="font-mono text-xs text-indigo-400 mb-3">{`// ${s.title.toLowerCase()}`}</div>
               <h2 className="font-pixel text-2xl sm:text-3xl mb-6">{s.title}</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {items.map((c) => (
                   <CosmeticTile
                     key={c.id}

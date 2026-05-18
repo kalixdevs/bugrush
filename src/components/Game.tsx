@@ -106,13 +106,13 @@ export default function Game() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <div className="font-pixel text-[9px] tracking-widest text-fuchsia-400 mb-1">BROKEN</div>
-                    <pre className="border-2 border-fuchsia-500/40 bg-zinc-950 p-3 text-[11px] leading-snug font-mono text-zinc-200 overflow-x-auto whitespace-pre">
+                    <pre className="border-2 border-fuchsia-500/40 bg-zinc-950 p-2 sm:p-3 text-[10px] sm:text-[11px] leading-snug font-mono text-zinc-200 overflow-x-auto whitespace-pre">
 {showBug.broken}
                     </pre>
                   </div>
                   <div>
                     <div className="font-pixel text-[9px] tracking-widest text-emerald-400 mb-1">FIX</div>
-                    <pre className="border-2 border-emerald-500/40 bg-zinc-950 p-3 text-[11px] leading-snug font-mono text-zinc-200 overflow-x-auto whitespace-pre">
+                    <pre className="border-2 border-emerald-500/40 bg-zinc-950 p-2 sm:p-3 text-[10px] sm:text-[11px] leading-snug font-mono text-zinc-200 overflow-x-auto whitespace-pre">
 {showBug.solution}
                     </pre>
                   </div>
