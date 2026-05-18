@@ -10,7 +10,7 @@ const DIFFICULTIES = ["easy", "normal", "hard", "hardcore"] as const;
 export type ProfileData = Awaited<ReturnType<typeof getProfileData>>;
 
 export async function getProfileData(userId: string) {
-  const [totals, bests, hardcore, recent, runLangs, dailyDays, achievements] = await Promise.all([
+  const [totals, bests, hardcore, recent, runLangs, dailyDays, achievements, matches] = await Promise.all([
     prisma.run.aggregate({
       where: { userId },
       _count: { _all: true },
@@ -54,6 +54,20 @@ export async function getProfileData(userId: string) {
       where: { userId },
       select: { badgeId: true },
     }),
+    prisma.matchParticipant.findMany({
+      where: { userId, match: { status: "finished" } },
+      orderBy: { match: { finishedAt: "desc" } },
+      take: 10,
+      include: {
+        match: {
+          include: {
+            participants: {
+              include: { user: { select: { handle: true, name: true } } },
+            },
+          },
+        },
+      },
+    }),
   ]);
 
   const runCount = totals._count._all;
@@ -84,6 +98,32 @@ export async function getProfileData(userId: string) {
 
   const earnedBadges = new Set(achievements.map((a) => a.badgeId));
 
+  const matchHistory = matches.map((p) => {
+    const m = p.match;
+    const opponents = m.participants
+      .filter((x) => x.userId !== userId)
+      .map((x) => ({
+        name: x.user.handle ?? x.user.name ?? "anon",
+        team: x.team,
+      }));
+    const outcome =
+      m.winnerTeam == null
+        ? ("draw" as const)
+        : m.winnerTeam === p.team
+        ? ("win" as const)
+        : ("loss" as const);
+    return {
+      id: m.id,
+      mode: m.mode,
+      finishedAt: m.finishedAt,
+      score: p.score,
+      outcome,
+      opponentLabel: opponents[0]
+        ? `${opponents[0].name}${opponents.length > 1 ? ` +${opponents.length - 1}` : ""}`
+        : "—",
+    };
+  });
+
   return {
     runCount,
     totalSolves,
@@ -95,6 +135,7 @@ export async function getProfileData(userId: string) {
     currentStreak,
     longestStreak,
     earnedBadges,
+    matchHistory,
   };
 }
 
@@ -120,7 +161,7 @@ type Props = {
 export default function PlayerProfile({ data, ownProfile, showcaseBadgeId }: Props) {
   const {
     runCount, totalSolves, bestScore, bestByDiff, hardcoreSurvival, recent,
-    languagesPlayed, currentStreak, longestStreak, earnedBadges,
+    languagesPlayed, currentStreak, longestStreak, earnedBadges, matchHistory,
   } = data;
   const earned = earnedBadges ?? new Set<string>();
 
@@ -226,6 +267,48 @@ export default function PlayerProfile({ data, ownProfile, showcaseBadgeId }: Pro
         <div className="font-pixel text-[10px] text-zinc-500 mt-4">
           LONGEST STREAK: <span className="text-zinc-300 tabular-nums">{longestStreak}</span> DAYS
         </div>
+      </section>
+
+      <section>
+        <div className="font-mono text-xs text-indigo-400 mb-3">{"// recent matches"}</div>
+        <h2 className="font-pixel text-lg mb-5">RECENT MATCHES</h2>
+        {matchHistory.length === 0 ? (
+          <div className="border-2 border-zinc-800 bg-zinc-900 p-6 text-center text-sm text-zinc-500">
+            no PvP matches yet
+          </div>
+        ) : (
+          <div className="border-2 border-zinc-800 bg-zinc-900 divide-y-2 divide-zinc-800">
+            {matchHistory.map((m) => {
+              const outcomeChip =
+                m.outcome === "win"
+                  ? { label: "W", cls: "border-emerald-500 text-emerald-300" }
+                  : m.outcome === "loss"
+                  ? { label: "L", cls: "border-fuchsia-500 text-fuchsia-300" }
+                  : { label: "D", cls: "border-zinc-700 text-zinc-400" };
+              return (
+                <Link
+                  key={m.id}
+                  href={`/match/${m.id}`}
+                  className="px-4 py-3 flex items-center gap-3 hover:bg-zinc-950 transition"
+                >
+                  <span className="font-pixel text-[10px] px-2 py-0.5 border-2 border-zinc-700 text-zinc-300">
+                    {m.mode.toUpperCase()}
+                  </span>
+                  <span className={`font-pixel text-[11px] px-2 py-0.5 border-2 ${outcomeChip.cls}`}>
+                    {outcomeChip.label}
+                  </span>
+                  <span className="text-xs text-zinc-400 font-mono">vs {m.opponentLabel}</span>
+                  <span className="ml-auto text-xs text-indigo-300 font-mono tabular-nums">
+                    {m.score}
+                  </span>
+                  <span className="text-[10px] text-zinc-500 font-mono">
+                    {m.finishedAt ? m.finishedAt.toISOString().slice(0, 10) : ""}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <section>

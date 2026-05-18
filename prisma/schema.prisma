@@ -36,6 +36,7 @@ model User {
   chatMessages  ChatMessage[]
   hostedMatches  Match[]            @relation("MatchHost")
   participations MatchParticipant[]
+  tournamentSlots TournamentSlot[]
 
   @@map("user")
 }
@@ -260,9 +261,61 @@ model Match {
   createdAt    DateTime  @default(now())
 
   participants MatchParticipant[]
+  bracketMatch BracketMatch?      @relation("BracketMatch")
 
   @@index([status, createdAt])
+  @@index([finishedAt])
   @@map("match")
+}
+
+model Tournament {
+  id           String   @id @default(cuid())
+  name         String
+  size         Int
+  status       String   // "draft" | "in_progress" | "finished" | "cancelled"
+  format       String   @default("single_elim")
+  difficulty   String
+  language     String
+  roundSeconds Int
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  winnerUserId String?
+  createdAt    DateTime @default(now())
+
+  slots    TournamentSlot[]
+  brackets BracketMatch[]
+
+  @@index([status, createdAt])
+  @@map("tournament")
+}
+
+model TournamentSlot {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  seed         Int
+  userId       String?
+  user         User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([tournamentId, seed])
+  @@map("tournament_slot")
+}
+
+model BracketMatch {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  matchId      String?    @unique
+  match        Match?     @relation("BracketMatch", fields: [matchId], references: [id], onDelete: SetNull)
+  round        Int
+  position     Int
+  player1Id    String?
+  player2Id    String?
+  winnerUserId String?
+  createdAt    DateTime   @default(now())
+
+  @@unique([tournamentId, round, position])
+  @@map("bracket_match")
 }
 
 model Event {

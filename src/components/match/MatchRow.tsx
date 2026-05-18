@@ -25,7 +25,7 @@ export default function MatchRow({ match, viewerId }: Props) {
   const isMine = viewerId != null && match.participants.some((p) => p.user.id === viewerId);
 
   const actionLabel = match.status === "in_progress"
-    ? "WATCH"
+    ? "● WATCH"
     : isMine ? "OPEN"
     : "▶ JOIN BATTLE";
 

@@ -135,4 +135,23 @@ async function settle(matchId: string): Promise<void> {
     type: "finished",
     winnerTeam: result.winnerTeam,
   });
+
+  // Bracket advancement: if this match is part of a tournament, push the
+  // winner into the next round and (if both feeders done) create that match.
+  try {
+    if (result.winnerTeam != null) {
+      const bracketRow = await prisma.bracketMatch.findUnique({
+        where: { matchId },
+      });
+      if (bracketRow) {
+        const winner = result.match.participants.find((p) => p.team === result.winnerTeam);
+        if (winner) {
+          const { advanceWinner } = await import("@/lib/bracket");
+          await advanceWinner(bracketRow.id, winner.userId);
+        }
+      }
+    }
+  } catch (e) {
+    console.error("[sec] bracket advancement failed", e);
+  }
 }

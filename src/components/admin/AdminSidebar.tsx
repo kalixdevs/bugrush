@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/admin/cosmetics", label: "COSMETICS" },
   { href: "/admin/users", label: "USERS" },
   { href: "/admin/chat", label: "CHAT" },
+  { href: "/admin/tournaments", label: "TOURNAMENTS" },
   { href: "/admin/announcement", label: "ANNOUNCEMENT" },
 ];
 

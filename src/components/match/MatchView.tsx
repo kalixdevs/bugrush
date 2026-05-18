@@ -6,6 +6,7 @@ import { useMatchRealtime } from "@/lib/realtimeClient";
 import MatchLobby from "./MatchLobby";
 import MatchGame from "./MatchGame";
 import MatchResults from "./MatchResults";
+import SpectatorView from "./SpectatorView";
 import type { MatchView as MatchViewType } from "./types";
 
 type Props = {
@@ -28,11 +29,16 @@ export default function MatchView({ match, viewerId }: Props) {
     return () => clearInterval(id);
   }, [match.status, router]);
 
+  const isParticipant = !!viewerId && match.participants.some((p) => p.userId === viewerId);
+
   if (match.status === "ready" || match.status === "cancelled") {
     return <MatchLobby match={match} viewerId={viewerId} />;
   }
   if (match.status === "in_progress") {
-    return <MatchGame match={match} viewerId={viewerId} />;
+    if (isParticipant) {
+      return <MatchGame match={match} viewerId={viewerId} />;
+    }
+    return <SpectatorView match={match} />;
   }
   return <MatchResults match={match} viewerId={viewerId} />;
 }

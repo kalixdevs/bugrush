@@ -20,10 +20,19 @@ export async function GET(req: Request) {
   if (userId) channels.push(`user:${userId}`);
 
   if (matchParam && userId) {
-    const participant = await prisma.matchParticipant.findUnique({
-      where: { matchId_userId: { matchId: matchParam, userId } },
-    });
-    if (participant) channels.push(`match:${matchParam}` as Channel);
+    const [participant, match] = await Promise.all([
+      prisma.matchParticipant.findUnique({
+        where: { matchId_userId: { matchId: matchParam, userId } },
+      }),
+      prisma.match.findUnique({
+        where: { id: matchParam },
+        select: { privacy: true, status: true },
+      }),
+    ]);
+    const canSpectate = match?.privacy === "public" && match?.status === "in_progress";
+    if (participant || canSpectate) {
+      channels.push(`match:${matchParam}` as Channel);
+    }
   }
 
   const events = await poll(channels, isFinite(since) ? since : 0);
