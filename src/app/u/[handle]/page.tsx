@@ -1,9 +1,12 @@
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import Avatar from "@/components/Avatar";
 import PlayerName from "@/components/PlayerName";
 import PlayerProfile, { getProfileData } from "@/components/profile/PlayerProfile";
 import { getEquippedForUser } from "@/lib/cosmetics";
+import AddFriendButton from "@/components/friends/AddFriendButton";
 
 export const metadata = { title: "Player — Bugrush" };
 
@@ -13,11 +16,16 @@ export default async function PublicProfilePage({
   params: Promise<{ handle: string }>;
 }) {
   const { handle } = await params;
-  const user = await prisma.user.findUnique({
-    where: { handle: handle.toLowerCase() },
-    select: { id: true, name: true, email: true, image: true, createdAt: true, handle: true, showcaseBadgeId: true },
-  });
+  const [user, session] = await Promise.all([
+    prisma.user.findUnique({
+      where: { handle: handle.toLowerCase() },
+      select: { id: true, name: true, email: true, image: true, createdAt: true, handle: true, showcaseBadgeId: true },
+    }),
+    auth.api.getSession({ headers: await headers() }),
+  ]);
   if (!user) notFound();
+  const viewerId = session?.user?.id ?? null;
+  const isOwnProfile = viewerId === user.id;
 
   const [data, cos] = await Promise.all([
     getProfileData(user.id),
@@ -45,6 +53,11 @@ export default async function PublicProfilePage({
             <div className="font-pixel text-[10px] text-zinc-500 mt-3">
               MEMBER SINCE {memberSince}
             </div>
+            {viewerId && !isOwnProfile && user.handle && (
+              <div className="mt-3">
+                <AddFriendButton handle={user.handle} />
+              </div>
+            )}
           </div>
         </section>
 

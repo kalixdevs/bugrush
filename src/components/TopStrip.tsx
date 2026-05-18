@@ -11,6 +11,7 @@ type MeState = {
   role: string | null;
   points: number;
   frameSrc: string | null;
+  incomingFriendCount?: number;
 };
 
 const HIDDEN_PREFIXES = [
@@ -57,7 +58,21 @@ export default function TopStrip() {
         </Link>
         <div className="flex items-center gap-2 sm:gap-4 text-xs">
           {me?.loggedIn && <PointsBadge value={me.points} />}
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            {me?.loggedIn && (
+              <Link
+                href="/friends"
+                title="Friends"
+                className="relative flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 text-lg border-2 border-zinc-800 hover:border-indigo-500 transition"
+              >
+                <span aria-hidden>👥</span>
+                {!!me.incomingFriendCount && me.incomingFriendCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 font-pixel text-[9px] bg-fuchsia-500 text-zinc-950 border-2 border-zinc-950 grid place-items-center">
+                    {me.incomingFriendCount > 9 ? "9+" : me.incomingFriendCount}
+                  </span>
+                )}
+              </Link>
+            )}
             <Link href="/leaderboard" title="Leaderboard" className="opacity-80 hover:opacity-100 transition flex items-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/icons/trophy.svg" alt="Leaderboard" className="h-8 sm:h-10 w-auto -mx-1" />

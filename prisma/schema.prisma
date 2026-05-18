@@ -21,6 +21,7 @@ model User {
   role          String    @default("user")
   showcaseBadgeId String?
   chatMutedUntil DateTime?
+  lastSeenAt    DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
@@ -37,8 +38,25 @@ model User {
   hostedMatches  Match[]            @relation("MatchHost")
   participations MatchParticipant[]
   tournamentSlots TournamentSlot[]
+  friendshipsFrom Friendship[]      @relation("FriendshipFrom")
+  friendshipsTo   Friendship[]      @relation("FriendshipTo")
 
   @@map("user")
+}
+
+model Friendship {
+  id         String   @id @default(cuid())
+  fromUserId String
+  fromUser   User     @relation("FriendshipFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUserId   String
+  toUser     User     @relation("FriendshipTo",   fields: [toUserId],   references: [id], onDelete: Cascade)
+  status     String   // "pending" | "accepted"
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([fromUserId, toUserId])
+  @@index([toUserId, status])
+  @@map("friendship")
 }
 
 model Session {

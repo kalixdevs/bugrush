@@ -8,6 +8,7 @@ import ChatDock from "@/components/ChatDock";
 import EventBanner from "@/components/EventBanner";
 import TopStrip from "@/components/TopStrip";
 import SystemAlerts from "@/components/SystemAlerts";
+import BrowserNotifBridge from "@/components/BrowserNotifBridge";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,6 +52,7 @@ export default async function RootLayout({
           </div>
           <ChatDock />
           <AchievementToast />
+          <BrowserNotifBridge />
         </RealtimeProvider>
       </body>
     </html>
