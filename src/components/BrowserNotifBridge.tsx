@@ -17,6 +17,13 @@ type Event =
       difficulty: string;
       fromHandle?: string | null;
       fromName?: string | null;
+    }
+  | {
+      type: "dm-received";
+      threadId: string;
+      senderHandle?: string | null;
+      senderName?: string | null;
+      body: string;
     };
 
 export default function BrowserNotifBridge() {
@@ -41,6 +48,13 @@ export default function BrowserNotifBridge() {
           const ev = p as Extract<Event, { type: "friend-request-accepted" }>;
           const who = ev.byHandle ?? ev.byName ?? "someone";
           fire("Friend request accepted", `${who} is now your friend`, "friend-accept");
+          break;
+        }
+        case "dm-received": {
+          const ev = p as Extract<Event, { type: "dm-received" }>;
+          const who = ev.senderHandle ?? ev.senderName ?? "someone";
+          const preview = (ev.body ?? "").slice(0, 120);
+          fire(`DM from ${who}`, preview, `dm-${ev.threadId}`);
           break;
         }
         case "match-invite-received": {

@@ -40,8 +40,43 @@ model User {
   tournamentSlots TournamentSlot[]
   friendshipsFrom Friendship[]      @relation("FriendshipFrom")
   friendshipsTo   Friendship[]      @relation("FriendshipTo")
+  dmThreadsA     DmThread[]         @relation("DmThreadA")
+  dmThreadsB     DmThread[]         @relation("DmThreadB")
+  dmMessages     DmMessage[]
 
   @@map("user")
+}
+
+model DmThread {
+  id            String      @id @default(cuid())
+  userAId       String
+  userAUser     User        @relation("DmThreadA", fields: [userAId], references: [id], onDelete: Cascade)
+  userBId       String
+  userBUser     User        @relation("DmThreadB", fields: [userBId], references: [id], onDelete: Cascade)
+  lastMessageAt DateTime    @default(now())
+  lastReadAtA   DateTime?
+  lastReadAtB   DateTime?
+  createdAt     DateTime    @default(now())
+  messages      DmMessage[]
+
+  @@unique([userAId, userBId])
+  @@index([userAId, lastMessageAt])
+  @@index([userBId, lastMessageAt])
+  @@map("dm_thread")
+}
+
+model DmMessage {
+  id        String   @id @default(cuid())
+  threadId  String
+  thread    DmThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body      String   @db.VarChar(500)
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([threadId, createdAt])
+  @@map("dm_message")
 }
 
 model Friendship {
