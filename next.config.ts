@@ -25,6 +25,11 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
   { key: "Content-Security-Policy", value: csp },
+  // Cross-origin posture: the API sets no Access-Control-Allow-Origin, so
+  // browsers already block cross-site reads. These make that explicit —
+  // other origins can't embed our responses or share a browsing context.
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+  { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
 ];
 
 const nextConfig: NextConfig = {

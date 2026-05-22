@@ -4,6 +4,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { publish } from "@/lib/realtime";
+import { rateLimit, rlKey } from "@/lib/rateLimit";
 
 const Body = z.object({
   friendUserId: z.string().min(1),
@@ -14,6 +15,16 @@ export async function POST(req: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const me = session.user.id;
+
+  // Tight cap: this fires a browser notification at the target, so it's a
+  // spam vector if left open.
+  const rl = await rateLimit(rlKey("friend-invite", me), 10, 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "rate_limited", retryInMs: rl.retryInMs },
+      { status: 429 },
+    );
+  }
 
   let body: unknown;
   try { body = await req.json(); }
