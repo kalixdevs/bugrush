@@ -267,6 +267,7 @@ export async function checkAndUnlock(userId: string): Promise<string[]> {
           image: user?.image ?? null,
           chatKind: "achievement",
           body: broadcastBody,
+          meta: { badgeId, badgeName: badge.name, letter: badge.letter, tone: badge.tone },
           createdAt: row.createdAt.toISOString(),
         });
       } catch { /* swallow */ }

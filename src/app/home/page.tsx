@@ -327,8 +327,8 @@ export default async function HomePage() {
           />
           <FeatureCard
             label="ACHIEVEMENTS"
-            href={userId ? "/profile#achievements" : "/login?next=/profile"}
-            state={userId ? `${achievementCount}/${BADGES.length}` : "LOCKED"}
+            href="/achievements"
+            state={userId ? `${achievementCount}/${BADGES.length}` : "BROWSE"}
             stateTone={userId ? "emerald" : "amber"}
           />
         </section>
