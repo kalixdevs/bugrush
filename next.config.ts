@@ -5,7 +5,7 @@ const MONACO_CDN = "https://cdn.jsdelivr.net";
 
 const csp = [
   "default-src 'self'",
-  `img-src 'self' data: https://*.public.blob.vercel-storage.com`,
+  `img-src 'self' data: https://*.public.blob.vercel-storage.com https://lh3.googleusercontent.com`,
   `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${MONACO_CDN}`,
   `script-src-elem 'self' 'unsafe-inline' ${MONACO_CDN}`,
   `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com ${MONACO_CDN}`,
