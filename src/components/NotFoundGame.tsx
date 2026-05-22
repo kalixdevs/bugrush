@@ -153,6 +153,7 @@ export default function NotFoundGame() {
           className="grid gap-[2px]"
           style={{
             gridTemplateColumns: `repeat(${SIZE}, 1fr)`,
+            gridTemplateRows: `repeat(${SIZE}, 1fr)`,
             width: "min(78vw, 320px)",
             height: "min(78vw, 320px)",
           }}
