@@ -40,25 +40,26 @@ export async function GET() {
   });
 }
 
+/**
+ * Total unread DM messages across all of the user's threads, in a single query.
+ * "Unread" = sent by the other side and newer than the user's per-side
+ * lastReadAt on that thread.
+ */
 async function countUnreadDms(me: string): Promise<number> {
-  const threads = await prisma.dmThread.findMany({
-    where: { OR: [{ userAId: me }, { userBId: me }] },
-    select: { id: true, userAId: true, lastReadAtA: true, lastReadAtB: true, lastMessageAt: true },
-    take: 100,
-  });
-  if (threads.length === 0) return 0;
-  const counts = await Promise.all(
-    threads.map((t) => {
-      const myLastRead = t.userAId === me ? t.lastReadAtA : t.lastReadAtB;
-      if (myLastRead && t.lastMessageAt <= myLastRead) return Promise.resolve(0);
-      return prisma.dmMessage.count({
-        where: {
-          threadId: t.id,
-          senderId: { not: me },
-          ...(myLastRead ? { createdAt: { gt: myLastRead } } : {}),
-        },
-      });
-    }),
-  );
-  return counts.reduce((a, b) => a + b, 0);
+  try {
+    const rows = await prisma.$queryRaw<Array<{ n: bigint }>>`
+      SELECT COUNT(*)::bigint AS n
+      FROM "dm_message" m
+      JOIN "dm_thread" t ON t."id" = m."threadId"
+      WHERE m."senderId" <> ${me}
+        AND (
+          (t."userAId" = ${me} AND (t."lastReadAtA" IS NULL OR m."createdAt" > t."lastReadAtA"))
+          OR
+          (t."userBId" = ${me} AND (t."lastReadAtB" IS NULL OR m."createdAt" > t."lastReadAtB"))
+        )
+    `;
+    return Number(rows[0]?.n ?? 0);
+  } catch {
+    return 0;
+  }
 }

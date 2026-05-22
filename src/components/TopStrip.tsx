@@ -5,14 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import AuthNav from "./AuthNav";
 import PointsBadge from "./PointsBadge";
-
-type MeState = {
-  loggedIn: boolean;
-  role: string | null;
-  points: number;
-  frameSrc: string | null;
-  incomingFriendCount?: number;
-};
+import { useMe } from "./MeProvider";
 
 const HIDDEN_PREFIXES = [
   "/admin", // has its own header
@@ -28,17 +21,8 @@ function shouldHide(pathname: string | null): boolean {
 
 export default function TopStrip() {
   const pathname = usePathname();
-  const [me, setMe] = useState<MeState | null>(null);
+  const { me } = useMe();
   const [inRound, setInRound] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/me/role", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((j) => { if (!cancelled) setMe(j); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [pathname]);
 
   useEffect(() => {
     const sync = () => setInRound(document.body.classList.contains("in-round"));

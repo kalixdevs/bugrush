@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Press_Start_2P } from "next/font/google";
 import "./globals.css";
 import CodeRain from "@/components/CodeRain";
 import { RealtimeProvider } from "@/lib/realtimeClient";
+import { MeProvider } from "@/components/MeProvider";
 import AchievementToast from "@/components/AchievementToast";
 import ChatDock from "@/components/ChatDock";
 import EventBanner from "@/components/EventBanner";
@@ -43,17 +44,19 @@ export default async function RootLayout({
     >
       <body className="h-screen overflow-hidden antialiased bg-zinc-950 bg-grid text-zinc-100 flex flex-col">
         <CodeRain />
-        <EventBanner />
-        <TopStrip />
-        <SystemAlerts />
-        <RealtimeProvider>
-          <div className="flex-1 min-h-0 overflow-y-auto" id="page-scroll">
-            {children}
-          </div>
-          <ChatDock />
-          <AchievementToast />
-          <BrowserNotifBridge />
-        </RealtimeProvider>
+        <MeProvider>
+          <EventBanner />
+          <TopStrip />
+          <SystemAlerts />
+          <RealtimeProvider>
+            <div className="flex-1 min-h-0 overflow-y-auto" id="page-scroll">
+              {children}
+            </div>
+            <ChatDock />
+            <AchievementToast />
+            <BrowserNotifBridge />
+          </RealtimeProvider>
+        </MeProvider>
       </body>
     </html>
   );

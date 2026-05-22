@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { headers } from "next/headers";
+import { unstable_cache } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { todayKey, getDailyChallenge } from "@/lib/daily";
@@ -8,6 +9,125 @@ import { BADGES, findBadge } from "@/lib/badges";
 import { computeStreaks } from "@/lib/streaks";
 
 export const metadata = { title: "Home — Bugrush" };
+
+type RawFeedItem =
+  | { id: string; ts: number; kind: "run"; name: string; score: number }
+  | { id: string; ts: number; kind: "daily"; name: string; timeMs: number }
+  | { id: string; ts: number; kind: "match"; name: string; extra: number; mode: string }
+  | { id: string; ts: number; kind: "badge"; name: string; badgeName: string };
+
+/**
+ * Global, non-user-specific home data (live feed + pulse stats). Identical for
+ * every visitor, so it's cached for 30s instead of re-queried per request.
+ */
+const getGlobalHomeData = unstable_cache(
+  async () => {
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+    const dayKey = todayKey();
+
+    const [
+      dailyStats, recentRuns, recentDailies, recentMatches, recentBadges,
+      rankedCount, activeToday, inProgressMatches,
+    ] = await Promise.all([
+      prisma.dailyAttempt.aggregate({
+        where: { dayKey, success: true },
+        _count: { _all: true },
+        _min: { timeMs: true },
+      }),
+      prisma.run.findMany({
+        where: { score: { gte: 500 } },
+        orderBy: { createdAt: "desc" },
+        take: 4,
+        select: {
+          id: true, score: true, createdAt: true,
+          user: { select: { handle: true, name: true } },
+        },
+      }),
+      prisma.dailyAttempt.findMany({
+        where: { success: true, dayKey },
+        orderBy: { timeMs: "asc" },
+        take: 4,
+        select: {
+          id: true, timeMs: true, createdAt: true,
+          user: { select: { handle: true, name: true } },
+        },
+      }),
+      prisma.match.findMany({
+        where: { status: "finished", winnerTeam: { not: null } },
+        orderBy: { finishedAt: "desc" },
+        take: 4,
+        select: {
+          id: true, mode: true, finishedAt: true, winnerTeam: true,
+          participants: {
+            select: { team: true, user: { select: { handle: true, name: true } } },
+          },
+        },
+      }),
+      prisma.achievement.findMany({
+        orderBy: { unlockedAt: "desc" },
+        take: 4,
+        select: {
+          id: true, badgeId: true, unlockedAt: true,
+          user: { select: { handle: true, name: true } },
+        },
+      }),
+      prisma.user.count({ where: { rankPoints: { gt: 0 } } }),
+      prisma.run.findMany({
+        where: { createdAt: { gte: todayStart } },
+        distinct: ["userId"],
+        select: { userId: true },
+      }),
+      prisma.match.count({ where: { status: "in_progress" } }),
+    ]);
+
+    // Flatten into a plain (JSON-serializable) feed so the cache stays clean.
+    const feed: RawFeedItem[] = [];
+    for (const r of recentRuns) {
+      feed.push({
+        id: `r:${r.id}`, ts: r.createdAt.getTime(), kind: "run",
+        name: r.user.handle ?? r.user.name ?? "anon", score: r.score,
+      });
+    }
+    for (const d of recentDailies) {
+      feed.push({
+        id: `d:${d.id}`, ts: d.createdAt.getTime(), kind: "daily",
+        name: d.user.handle ?? d.user.name ?? "anon", timeMs: d.timeMs,
+      });
+    }
+    for (const m of recentMatches) {
+      if (m.finishedAt == null || m.winnerTeam == null) continue;
+      const winners = m.participants
+        .filter((p) => p.team === m.winnerTeam)
+        .map((p) => p.user.handle ?? p.user.name ?? "anon");
+      if (winners.length === 0) continue;
+      feed.push({
+        id: `m:${m.id}`, ts: m.finishedAt.getTime(), kind: "match",
+        name: winners[0], extra: winners.length - 1, mode: m.mode,
+      });
+    }
+    for (const a of recentBadges) {
+      const badge = findBadge(a.badgeId);
+      if (!badge) continue;
+      feed.push({
+        id: `a:${a.id}`, ts: a.unlockedAt.getTime(), kind: "badge",
+        name: a.user.handle ?? a.user.name ?? "anon", badgeName: badge.name,
+      });
+    }
+    feed.sort((a, b) => b.ts - a.ts);
+
+    return {
+      dailySolves: dailyStats._count._all,
+      bestTimeMs: dailyStats._min.timeMs,
+      rankedCount,
+      activeTodayCount: activeToday.length,
+      inProgressMatches,
+      feedItems: feed.slice(0, 10),
+    };
+  },
+  ["home-global-data"],
+  { revalidate: 30, tags: ["home-feed"] },
+);
 
 const DIFF_TONE: Record<string, string> = {
   easy: "border-emerald-500 text-emerald-300",
@@ -22,9 +142,6 @@ export default async function HomePage() {
   const session = await auth.api.getSession({ headers: await headers() });
   const userId = session?.user?.id ?? null;
 
-  const todayStart = new Date();
-  todayStart.setUTCHours(0, 0, 0, 0);
-
   const me = userId
     ? await prisma.user.findUnique({
         where: { id: userId },
@@ -33,11 +150,9 @@ export default async function HomePage() {
     : null;
 
   const [
-    myAttempt, myReward, achievementCount,
-    dailyStats, recentRuns, recentDailies, recentMatches, recentBadges,
-    rankedCount, betterCount, activeToday, inProgressMatches,
-    myDailyKeys,
+    global, myAttempt, myReward, achievementCount, betterCount, myDailyKeys,
   ] = await Promise.all([
+    getGlobalHomeData(),
     userId
       ? prisma.dailyAttempt.findUnique({
           where: { userId_dayKey: { userId, dayKey } },
@@ -51,58 +166,9 @@ export default async function HomePage() {
     userId
       ? prisma.achievement.count({ where: { userId } })
       : Promise.resolve(0),
-    prisma.dailyAttempt.aggregate({
-      where: { dayKey, success: true },
-      _count: { _all: true },
-      _min: { timeMs: true },
-    }),
-    prisma.run.findMany({
-      where: { score: { gte: 500 } },
-      orderBy: { createdAt: "desc" },
-      take: 4,
-      select: {
-        id: true, score: true, createdAt: true,
-        user: { select: { handle: true, name: true } },
-      },
-    }),
-    prisma.dailyAttempt.findMany({
-      where: { success: true, dayKey },
-      orderBy: { timeMs: "asc" },
-      take: 4,
-      select: {
-        id: true, timeMs: true, createdAt: true,
-        user: { select: { handle: true, name: true } },
-      },
-    }),
-    prisma.match.findMany({
-      where: { status: "finished", winnerTeam: { not: null } },
-      orderBy: { finishedAt: "desc" },
-      take: 4,
-      select: {
-        id: true, mode: true, finishedAt: true, winnerTeam: true,
-        participants: {
-          select: { team: true, user: { select: { handle: true, name: true } } },
-        },
-      },
-    }),
-    prisma.achievement.findMany({
-      orderBy: { unlockedAt: "desc" },
-      take: 4,
-      select: {
-        id: true, badgeId: true, unlockedAt: true,
-        user: { select: { handle: true, name: true } },
-      },
-    }),
-    prisma.user.count({ where: { rankPoints: { gt: 0 } } }),
     me?.rankPoints != null
       ? prisma.user.count({ where: { rankPoints: { gt: me.rankPoints } } })
       : Promise.resolve(0),
-    prisma.run.findMany({
-      where: { createdAt: { gte: todayStart } },
-      distinct: ["userId"],
-      select: { userId: true },
-    }),
-    prisma.match.count({ where: { status: "in_progress" } }),
     userId
       ? prisma.dailyAttempt.findMany({
           where: { userId, success: true },
@@ -111,84 +177,19 @@ export default async function HomePage() {
       : Promise.resolve([]),
   ]);
 
+  const {
+    dailySolves, bestTimeMs, rankedCount, activeTodayCount,
+    inProgressMatches, feedItems,
+  } = global;
+
   const displayName = me?.name ?? me?.handle ?? "stranger";
   const rank = rankFor(me?.rankPoints ?? 0);
 
-  const dailySolves = dailyStats._count._all;
-  const bestTimeMs = dailyStats._min.timeMs;
-
   const streaks = computeStreaks(myDailyKeys.map((d) => d.dayKey));
-  const activeTodayCount = activeToday.length;
   const topPercent =
     rankedCount > 0 && me?.rankPoints != null && me.rankPoints > 0
       ? Math.max(0.1, Math.round((betterCount / rankedCount) * 1000) / 10)
       : null;
-
-  // Compose unified feed.
-  type FeedItem = { id: string; ts: number; text: React.ReactNode };
-  const feed: FeedItem[] = [];
-  for (const r of recentRuns) {
-    feed.push({
-      id: `r:${r.id}`,
-      ts: r.createdAt.getTime(),
-      text: (
-        <>
-          <FeedName name={r.user.handle ?? r.user.name ?? "anon"} />{" "}
-          <span className="text-zinc-400">scored</span>{" "}
-          <span className="text-indigo-300 font-mono">{r.score}</span>
-        </>
-      ),
-    });
-  }
-  for (const d of recentDailies) {
-    feed.push({
-      id: `d:${d.id}`,
-      ts: d.createdAt.getTime(),
-      text: (
-        <>
-          <FeedName name={d.user.handle ?? d.user.name ?? "anon"} />{" "}
-          <span className="text-zinc-400">solved Today&apos;s Incident in</span>{" "}
-          <span className="text-amber-300 font-mono">{(d.timeMs / 1000).toFixed(1)}s</span>
-        </>
-      ),
-    });
-  }
-  for (const m of recentMatches) {
-    if (m.finishedAt == null || m.winnerTeam == null) continue;
-    const winners = m.participants
-      .filter((p) => p.team === m.winnerTeam)
-      .map((p) => p.user.handle ?? p.user.name ?? "anon");
-    if (winners.length === 0) continue;
-    feed.push({
-      id: `m:${m.id}`,
-      ts: m.finishedAt.getTime(),
-      text: (
-        <>
-          <FeedName name={winners[0]} />
-          {winners.length > 1 && <span className="text-zinc-500"> +{winners.length - 1}</span>}{" "}
-          <span className="text-zinc-400">won a</span>{" "}
-          <span className="text-fuchsia-300 font-mono">{m.mode.toUpperCase()}</span>
-        </>
-      ),
-    });
-  }
-  for (const a of recentBadges) {
-    const badge = findBadge(a.badgeId);
-    if (!badge) continue;
-    feed.push({
-      id: `a:${a.id}`,
-      ts: a.unlockedAt.getTime(),
-      text: (
-        <>
-          <FeedName name={a.user.handle ?? a.user.name ?? "anon"} />{" "}
-          <span className="text-zinc-400">unlocked</span>{" "}
-          <span className="text-amber-300">{badge.name}</span>
-        </>
-      ),
-    });
-  }
-  feed.sort((a, b) => b.ts - a.ts);
-  const feedItems = feed.slice(0, 10);
 
   const dailyState = !userId
     ? { label: "LOG IN TO PLAY", href: "/login?next=/daily/play", tone: "amber" as const }
@@ -280,7 +281,7 @@ export default async function HomePage() {
               )}
               {feedItems.map((it) => (
                 <li key={it.id} className="px-4 py-2 text-xs leading-snug">
-                  {it.text}
+                  <FeedRow item={it} />
                 </li>
               ))}
             </ul>
@@ -345,6 +346,44 @@ function FeedName({ name }: { name: string }) {
       {name}
     </Link>
   );
+}
+
+function FeedRow({ item }: { item: RawFeedItem }) {
+  switch (item.kind) {
+    case "run":
+      return (
+        <>
+          <FeedName name={item.name} />{" "}
+          <span className="text-zinc-400">scored</span>{" "}
+          <span className="text-indigo-300 font-mono">{item.score}</span>
+        </>
+      );
+    case "daily":
+      return (
+        <>
+          <FeedName name={item.name} />{" "}
+          <span className="text-zinc-400">solved Today&apos;s Incident in</span>{" "}
+          <span className="text-amber-300 font-mono">{(item.timeMs / 1000).toFixed(1)}s</span>
+        </>
+      );
+    case "match":
+      return (
+        <>
+          <FeedName name={item.name} />
+          {item.extra > 0 && <span className="text-zinc-500"> +{item.extra}</span>}{" "}
+          <span className="text-zinc-400">won a</span>{" "}
+          <span className="text-fuchsia-300 font-mono">{item.mode.toUpperCase()}</span>
+        </>
+      );
+    case "badge":
+      return (
+        <>
+          <FeedName name={item.name} />{" "}
+          <span className="text-zinc-400">unlocked</span>{" "}
+          <span className="text-amber-300">{item.badgeName}</span>
+        </>
+      );
+  }
 }
 
 type Tone = "emerald" | "fuchsia" | "amber" | "zinc";

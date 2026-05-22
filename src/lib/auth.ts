@@ -30,6 +30,11 @@ export const auth = betterAuth({
     minPasswordLength: 8,
     maxPasswordLength: 128,
   },
+  session: {
+    // Read the session from a short-lived signed cookie instead of the DB
+    // on most getSession calls. 60s keeps auth/role changes near-instant.
+    cookieCache: { enabled: true, maxAge: 60 },
+  },
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID as string,

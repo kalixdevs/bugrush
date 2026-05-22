@@ -30,8 +30,16 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     let timer: ReturnType<typeof setTimeout> | null = null;
     let since = 0;
 
+    const hidden = () =>
+      typeof document !== "undefined" && document.visibilityState === "hidden";
+
     const tick = async () => {
       if (stopped) return;
+      // Skip the request while the tab is backgrounded — reschedule a check.
+      if (hidden()) {
+        timer = setTimeout(tick, POLL_INTERVAL_MS);
+        return;
+      }
       try {
         const res = await fetch(`/api/poll?since=${since}`, { cache: "no-store" });
         if (res.ok) {
@@ -58,11 +66,20 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       if (!stopped) timer = setTimeout(tick, POLL_INTERVAL_MS);
     };
 
+    // Returning to the tab: poll immediately instead of waiting out the timer.
+    const onVisible = () => {
+      if (stopped || hidden()) return;
+      if (timer) clearTimeout(timer);
+      tick();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
     tick();
 
     return () => {
       stopped = true;
       if (timer) clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
 
@@ -106,8 +123,15 @@ export function useMatchRealtime(
     let timer: ReturnType<typeof setTimeout> | null = null;
     let since = 0;
 
+    const hidden = () =>
+      typeof document !== "undefined" && document.visibilityState === "hidden";
+
     const tick = async () => {
       if (stopped) return;
+      if (hidden()) {
+        timer = setTimeout(tick, POLL_INTERVAL_MS);
+        return;
+      }
       try {
         const res = await fetch(
           `/api/poll?match=${encodeURIComponent(matchId)}&since=${since}`,
@@ -135,11 +159,19 @@ export function useMatchRealtime(
       if (!stopped) timer = setTimeout(tick, POLL_INTERVAL_MS);
     };
 
+    const onVisible = () => {
+      if (stopped || hidden()) return;
+      if (timer) clearTimeout(timer);
+      tick();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
     tick();
 
     return () => {
       stopped = true;
       if (timer) clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [matchId]);
 

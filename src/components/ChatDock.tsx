@@ -8,6 +8,7 @@ import Avatar from "./Avatar";
 import BadgeIcon from "./BadgeIcon";
 import { findBadge } from "@/lib/badges";
 import { isOnline } from "@/lib/presence";
+import { useMe } from "./MeProvider";
 
 type MatchMeta = {
   matchId: string;
@@ -111,8 +112,10 @@ const MUTE_OPTIONS: Array<{ label: string; minutes: number }> = [
 export default function ChatDock() {
   const rt = useRealtime();
   const { data: session, isPending } = useSession();
+  const { me } = useMe();
   const loggedIn = !!session?.user;
   const myId = session?.user?.id ?? null;
+  const isAdmin = me?.role === "admin";
 
   const [open, setOpen] = useState<boolean>(() => readInitialOpen());
   const [inRound, setInRound] = useState(false);
@@ -122,7 +125,6 @@ export default function ChatDock() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   // DM state
   const [threads, setThreads] = useState<ThreadRow[]>([]);
@@ -136,16 +138,6 @@ export default function ChatDock() {
   const [hostedMatchId, setHostedMatchId] = useState<string | null>(null);
   const lastTypingSentRef = useRef<number>(0);
   const bottomRef = useRef<HTMLDivElement>(null);
-
-  // Viewer role + hosted match.
-  useEffect(() => {
-    if (!loggedIn) return;
-    let cancelled = false;
-    fetch("/api/me/role").then((r) => r.json()).then((j) => {
-      if (!cancelled) setIsAdmin(j.role === "admin");
-    }).catch(() => {});
-    return () => { cancelled = true; };
-  }, [loggedIn]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -497,9 +489,13 @@ export default function ChatDock() {
     } catch { /* ignore */ }
   };
 
+  // Once the friends tab has loaded threads, that's the live source of truth;
+  // before then, fall back to the count from the shared /api/me/role poll.
   const totalUnread = useMemo(
-    () => threads.reduce((a, t) => a + t.unread, 0),
-    [threads],
+    () => (threads.length > 0
+      ? threads.reduce((a, t) => a + t.unread, 0)
+      : me?.unreadDmCount ?? 0),
+    [threads, me?.unreadDmCount],
   );
 
   // Friends-without-a-thread for START NEW section.

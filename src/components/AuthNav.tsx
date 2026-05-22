@@ -5,25 +5,16 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useSession, signOut } from "@/lib/auth-client";
 import Avatar from "./Avatar";
+import { useMe } from "./MeProvider";
 
 export default function AuthNav() {
   const router = useRouter();
   const { data, isPending } = useSession();
-  const [role, setRole] = useState<string | null>(null);
-  const [frameSrc, setFrameSrc] = useState<string | null>(null);
+  const { me } = useMe();
+  const role = me?.role ?? null;
+  const frameSrc = me?.frameSrc ?? null;
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!data?.user) return;
-    let cancelled = false;
-    fetch("/api/me/role").then((r) => r.json()).then((j) => {
-      if (cancelled) return;
-      setRole(j.role ?? null);
-      setFrameSrc(j.frameSrc ?? null);
-    }).catch(() => {});
-    return () => { cancelled = true; };
-  }, [data?.user]);
 
   useEffect(() => {
     if (!open) return;
