@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import CosmeticTile from "@/components/shop/CosmeticTile";
+import PageHeader from "@/components/PageHeader";
 import type { CosmeticCategory, Rarity } from "@/lib/cosmetics";
 
 export const metadata = { title: "Shop — Bugrush" };
@@ -49,13 +50,19 @@ export default async function ShopPage() {
 
   return (
     <div className="text-zinc-100">
-      <main className="max-w-6xl mx-auto px-6 py-10 space-y-12">
+      <main className="max-w-6xl mx-auto px-6 py-10 space-y-10">
+        <PageHeader
+          eyebrow="// shop"
+          title="COSMETIC SHOP"
+          subtitle="Spend coins on frames, titles, and name effects."
+        />
+        <div className="space-y-12">
         {SECTIONS.map((s) => {
           const items = cosmetics.filter((c) => c.category === s.id);
           return (
             <section key={s.id}>
-              <div className="font-mono text-xs text-indigo-400 mb-3">{`// ${s.title.toLowerCase()}`}</div>
-              <h2 className="font-pixel text-2xl sm:text-3xl mb-6">{s.title}</h2>
+              <div className="font-mono text-xs text-indigo-400 mb-2">{`// ${s.title.toLowerCase()}`}</div>
+              <h2 className="font-pixel text-lg mb-5">{s.title}</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {items.map((c) => (
                   <CosmeticTile
@@ -81,6 +88,7 @@ export default async function ShopPage() {
             </section>
           );
         })}
+        </div>
       </main>
     </div>
   );

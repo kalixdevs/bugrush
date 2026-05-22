@@ -1,3 +1,5 @@
+import PageHeader from "@/components/PageHeader";
+
 export const metadata = { title: "Support — Bugrush" };
 
 const SUPPORT_EMAIL = "kalixdevs@gmail.com";
@@ -5,14 +7,12 @@ const SUPPORT_EMAIL = "kalixdevs@gmail.com";
 export default function SupportPage() {
   return (
     <main className="max-w-2xl mx-auto px-6 py-16 space-y-6">
-      <div className="text-center">
-        <div className="font-mono text-xs text-indigo-400 mb-3">{"// support"}</div>
-        <h1 className="font-pixel text-3xl">CONTACT US</h1>
-        <p className="text-zinc-400 text-sm mt-3">
-          Stuck on a bug, missing rewards, or want to report a player? Email us and
-          we&apos;ll get back as soon as we can.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="// support"
+        title="CONTACT US"
+        subtitle="Stuck on a bug, missing rewards, or want to report a player? Email us and we'll get back as soon as we can."
+        align="center"
+      />
 
       <div className="border-2 border-zinc-800 bg-zinc-900 p-6 text-center">
         <div className="font-pixel text-[10px] text-zinc-500 tracking-widest mb-2">EMAIL</div>

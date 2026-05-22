@@ -7,6 +7,7 @@ import { todayKey } from "@/lib/daily";
 import OpenCaseButton from "@/components/rewards/OpenCaseButton";
 import Avatar from "@/components/Avatar";
 import PlayerName from "@/components/PlayerName";
+import PageHeader from "@/components/PageHeader";
 
 export const metadata = { title: "Daily Rewards — Bugrush" };
 
@@ -48,18 +49,19 @@ export default async function RewardsPage() {
   return (
     <div className="text-zinc-100">
       <main className="max-w-2xl mx-auto px-6 py-16 text-center space-y-8">
-        <div className="font-mono text-xs text-indigo-400">{`> ${dayKey}`}</div>
-        <h1 className="font-pixel text-3xl sm:text-4xl leading-relaxed">
-          {reward ? "OPENED FOR TODAY" : "OPEN TODAY'S CASE"}
-        </h1>
+        <PageHeader
+          eyebrow={`> ${dayKey}`}
+          title={reward ? "OPENED FOR TODAY" : "OPEN TODAY'S CASE"}
+          subtitle={
+            reward
+              ? undefined
+              : "One case per UTC day. Common cosmetic, coin payout, or — rarely — a legendary drop."
+          }
+          align="center"
+        />
 
         {!reward ? (
-          <>
-            <p className="text-zinc-400 max-w-md mx-auto">
-              One case per UTC day. Common cosmetic, coin payout, or — rarely — a legendary drop.
-            </p>
-            <OpenCaseButton />
-          </>
+          <OpenCaseButton />
         ) : (
           <div className={`border-2 ${tone?.border} bg-zinc-900 p-8 inline-block`}>
             <div className={`font-pixel text-xs ${tone?.text} mb-4`}>{tone?.label}</div>

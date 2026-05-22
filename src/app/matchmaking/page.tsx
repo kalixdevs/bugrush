@@ -4,6 +4,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import MatchRow from "@/components/match/MatchRow";
 import { isMatchExpired } from "@/lib/match";
+import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
 
 export const metadata = { title: "Matchmaking — Bugrush" };
 
@@ -32,24 +34,21 @@ export default async function MatchmakingPage() {
   return (
     <div className="text-zinc-100 relative z-10">
       <main className="max-w-6xl mx-auto px-6 py-10 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="font-mono text-xs text-indigo-400 mb-2">{"// pvp"}</div>
-            <h1 className="font-pixel text-2xl sm:text-3xl">PUBLIC MATCHMAKING</h1>
-          </div>
-          <Link
-            href={userId ? "/matchmaking/create" : "/login?next=/matchmaking/create"}
-            className="btn-press px-5 py-2 font-pixel text-[11px] border-2 border-zinc-950 bg-indigo-500 text-zinc-950"
-          >
-            ▶ CREATE A MATCH
-          </Link>
-        </div>
+        <PageHeader
+          eyebrow="// pvp"
+          title="PUBLIC MATCHMAKING"
+          right={
+            <Link
+              href={userId ? "/matchmaking/create" : "/login?next=/matchmaking/create"}
+              className="btn-press px-5 py-2 font-pixel text-[11px] border-2 border-zinc-950 bg-indigo-500 text-zinc-950"
+            >
+              ▶ CREATE A MATCH
+            </Link>
+          }
+        />
 
         {matches.length === 0 ? (
-          <div className="border-2 border-zinc-800 bg-zinc-900 p-10 text-center">
-            <p className="font-pixel text-sm text-zinc-400">NO OPEN MATCHES</p>
-            <p className="text-zinc-500 text-sm mt-2">Be the first to host.</p>
-          </div>
+          <EmptyState title="NO OPEN MATCHES" hint="Be the first to host." />
         ) : (
           <div className="space-y-3">
             {matches.map((m) => (

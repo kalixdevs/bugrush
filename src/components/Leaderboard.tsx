@@ -3,6 +3,9 @@ import { prisma } from "@/lib/db";
 import { getEquippedForUsers, getShowcaseBadgesForUsers } from "@/lib/cosmetics";
 import Avatar from "./Avatar";
 import PlayerName from "./PlayerName";
+import PageHeader from "./PageHeader";
+import EmptyState from "./EmptyState";
+import MaybeLink from "./MaybeLink";
 
 type DiffKey = "easy" | "normal" | "hard" | "hardcore";
 
@@ -92,121 +95,95 @@ export default async function Leaderboard({ difficulty, baseHref = "/" }: Props)
     getShowcaseBadgesForUsers(rowIds),
   ]);
 
-  const subtitle = difficulty ? difficulty.toUpperCase() : "ALL TIME";
+  const subtitle = difficulty
+    ? `${difficulty.toUpperCase()} board`
+    : "All-time best scores";
 
   return (
-    <section id="leaderboard" className="border-t-2 border-zinc-800">
-      <div className="max-w-6xl mx-auto px-6 py-20">
-        <div className="font-mono text-xs text-indigo-400 mb-3">{"// leaderboard"}</div>
-        <h2 className="font-pixel text-xl sm:text-2xl mb-8 leading-relaxed">
-          HIGH SCORES.<br />{subtitle}.
-        </h2>
+    <main className="max-w-6xl mx-auto px-6 py-10 space-y-6">
+      <PageHeader eyebrow="// leaderboard" title="HIGH SCORES" subtitle={subtitle} />
 
-        <div className="flex flex-wrap gap-2 mb-6">
-          {TABS.map((t) => {
-            const selected = t.id === activeTab;
-            const href =
-              t.id === "all"
-                ? `${baseHref}#leaderboard`
-                : `${baseHref}?board=${t.id}#leaderboard`;
-            return (
-              <Link
-                key={t.id}
-                href={href}
-                scroll={false}
-                className={`px-3.5 py-2 font-pixel text-[11px] border-2 transition ${
-                  selected
-                    ? "border-indigo-500 bg-indigo-500 text-zinc-950"
-                    : "border-zinc-700 bg-zinc-950 text-zinc-300 hover:border-zinc-500"
-                }`}
-              >
-                {t.label}
-              </Link>
-            );
-          })}
-        </div>
-
-        {rows.length === 0 ? (
-          <div className="border-2 border-zinc-800 bg-zinc-900 p-8 text-center">
-            <p className="font-pixel text-sm text-zinc-400">NO RUNS YET</p>
-            <p className="text-zinc-500 text-sm mt-2">Be the first.</p>
-          </div>
-        ) : (
-          <div className="border-2 border-zinc-800 bg-zinc-900 overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-zinc-950 border-b-2 border-zinc-800">
-                <tr className="font-pixel text-[10px] text-zinc-400">
-                  <th className="text-left px-3 py-3 w-12"></th>
-                  <th className="text-left px-3 py-3">PLAYER</th>
-                  <ColHead label="ALL" diff={null} active={activeTab} accent="text-indigo-400" />
-                  <ColHead label="EASY" diff="easy" active={activeTab} />
-                  <ColHead label="NORMAL" diff="normal" active={activeTab} />
-                  <ColHead label="HARD" diff="hard" active={activeTab} />
-                  <ColHead label="HARDCORE" diff="hardcore" active={activeTab} accent="text-fuchsia-400" />
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r, i) => {
-                  const profileHref = r.handle ? `/u/${r.handle}` : null;
-                  const cos = cosmeticsMap.get(r.userId);
-                  const showcaseBadgeId = showcasesMap.get(r.userId) ?? null;
-                  return (
-                    <tr
-                      key={r.userId}
-                      className={i % 2 === 0 ? "bg-zinc-900" : "bg-zinc-950/60"}
-                    >
-                      <td className="px-3 py-2.5">
-                        {profileHref ? (
-                          <Link href={profileHref} className="inline-block">
-                            <Avatar src={r.image} name={r.name} size={36} frameSrc={cos?.frame?.assetUrl} />
-                          </Link>
-                        ) : (
-                          <Avatar src={r.image} name={r.name} size={36} frameSrc={cos?.frame?.assetUrl} />
-                        )}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        {profileHref ? (
-                          <Link href={profileHref} className="flex items-center gap-2 hover:text-indigo-400 transition">
-                            <span className="font-pixel text-[10px] text-indigo-400 tabular-nums">
-                              {String(i + 1).padStart(2, "0")}
-                            </span>
-                            <PlayerName
-                              name={r.name}
-                              title={cos?.title?.textValue}
-                              nameEffectClass={cos?.nameEffect?.cssClass}
-                              showcaseBadgeId={showcaseBadgeId}
-                              className="font-medium"
-                            />
-                          </Link>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <span className="font-pixel text-[10px] text-indigo-400 tabular-nums">
-                              {String(i + 1).padStart(2, "0")}
-                            </span>
-                            <PlayerName
-                              name={r.name}
-                              title={cos?.title?.textValue}
-                              nameEffectClass={cos?.nameEffect?.cssClass}
-                              showcaseBadgeId={showcaseBadgeId}
-                              className="font-medium"
-                            />
-                          </div>
-                        )}
-                      </td>
-                      <Cell value={r.all} active={activeTab === "all"} accent="text-indigo-400" bold />
-                      <Cell value={r.easy} active={activeTab === "easy"} />
-                      <Cell value={r.normal} active={activeTab === "normal"} />
-                      <Cell value={r.hard} active={activeTab === "hard"} />
-                      <Cell value={r.hardcore} active={activeTab === "hardcore"} accent="text-fuchsia-400" />
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+      <div className="flex flex-wrap gap-2">
+        {TABS.map((t) => {
+          const selected = t.id === activeTab;
+          const href = t.id === "all" ? baseHref : `${baseHref}?board=${t.id}`;
+          return (
+            <Link
+              key={t.id}
+              href={href}
+              className={`px-3.5 py-2 font-pixel text-[11px] border-2 transition ${
+                selected
+                  ? "border-indigo-500 bg-indigo-500 text-zinc-950"
+                  : "border-zinc-700 bg-zinc-950 text-zinc-300 hover:border-zinc-500"
+              }`}
+            >
+              {t.label}
+            </Link>
+          );
+        })}
       </div>
-    </section>
+
+      {rows.length === 0 ? (
+        <EmptyState title="NO RUNS YET" hint="Be the first." />
+      ) : (
+        <div className="border-2 border-zinc-800 bg-zinc-900 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-zinc-950 border-b-2 border-zinc-800">
+              <tr className="font-pixel text-[10px] text-zinc-400">
+                <th className="text-left px-3 py-3 w-12"></th>
+                <th className="text-left px-3 py-3">PLAYER</th>
+                <ColHead label="ALL" diff={null} active={activeTab} accent="text-indigo-400" />
+                <ColHead label="EASY" diff="easy" active={activeTab} />
+                <ColHead label="NORMAL" diff="normal" active={activeTab} />
+                <ColHead label="HARD" diff="hard" active={activeTab} />
+                <ColHead label="HARDCORE" diff="hardcore" active={activeTab} accent="text-fuchsia-400" />
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => {
+                const profileHref = r.handle ? `/u/${r.handle}` : null;
+                const cos = cosmeticsMap.get(r.userId);
+                const showcaseBadgeId = showcasesMap.get(r.userId) ?? null;
+                return (
+                  <tr
+                    key={r.userId}
+                    className={i % 2 === 0 ? "bg-zinc-900" : "bg-zinc-950/60"}
+                  >
+                    <td className="px-3 py-2.5">
+                      <MaybeLink href={profileHref} className="inline-block">
+                        <Avatar src={r.image} name={r.name} size={36} frameSrc={cos?.frame?.assetUrl} />
+                      </MaybeLink>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <MaybeLink
+                        href={profileHref}
+                        className="flex items-center gap-2 hover:text-indigo-400 transition"
+                      >
+                        <span className="font-pixel text-[10px] text-indigo-400 tabular-nums">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <PlayerName
+                          name={r.name}
+                          title={cos?.title?.textValue}
+                          nameEffectClass={cos?.nameEffect?.cssClass}
+                          showcaseBadgeId={showcaseBadgeId}
+                          className="font-medium"
+                        />
+                      </MaybeLink>
+                    </td>
+                    <Cell value={r.all} active={activeTab === "all"} accent="text-indigo-400" bold />
+                    <Cell value={r.easy} active={activeTab === "easy"} />
+                    <Cell value={r.normal} active={activeTab === "normal"} />
+                    <Cell value={r.hard} active={activeTab === "hard"} />
+                    <Cell value={r.hardcore} active={activeTab === "hardcore"} accent="text-fuchsia-400" />
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </main>
   );
 }
 

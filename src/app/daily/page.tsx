@@ -5,6 +5,9 @@ import { prisma } from "@/lib/db";
 import { todayKey } from "@/lib/daily";
 import Avatar from "@/components/Avatar";
 import ShareDailyButton from "@/components/ShareDailyButton";
+import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
+import MaybeLink from "@/components/MaybeLink";
 
 export const metadata = { title: "Daily — Bugrush" };
 
@@ -38,13 +41,12 @@ export default async function DailyPage() {
     <div className="text-zinc-100">
       <main className="max-w-3xl mx-auto px-6 py-12 space-y-10">
         <section className="text-center">
-          <div className="font-mono text-xs text-indigo-400 mb-3">{`> ${dayKey}`}</div>
-          <h1 className="font-pixel text-2xl sm:text-3xl leading-relaxed">
-            TODAY&apos;S BUG.
-          </h1>
-          <p className="text-zinc-400 mt-4">
-            One bug. One attempt. Same challenge for every player. New bug at UTC midnight.
-          </p>
+          <PageHeader
+            eyebrow={`> ${dayKey}`}
+            title="TODAY'S BUG"
+            subtitle="One bug. One attempt. Same challenge for every player. New bug at UTC midnight."
+            align="center"
+          />
 
           <div className="mt-8">
             {!userId ? (
@@ -87,10 +89,7 @@ export default async function DailyPage() {
           <h2 className="font-pixel text-lg mb-5">FASTEST SOLVES</h2>
 
           {top.length === 0 ? (
-            <div className="border-2 border-zinc-800 bg-zinc-900 p-8 text-center">
-              <p className="font-pixel text-sm text-zinc-400">NO ATTEMPTS YET</p>
-              <p className="text-zinc-500 text-sm mt-2">Be the first today.</p>
-            </div>
+            <EmptyState title="NO ATTEMPTS YET" hint="Be the first today." />
           ) : (
             <div className="border-2 border-zinc-800 bg-zinc-900 overflow-hidden">
               <table className="w-full text-sm">
@@ -116,36 +115,20 @@ export default async function DailyPage() {
                         }`}
                       >
                         <td className="px-3 py-2.5">
-                          {href ? (
-                            <Link href={href}>
-                              <Avatar src={row.user.image} name={name} size={32} />
-                            </Link>
-                          ) : (
+                          <MaybeLink href={href} className="inline-block">
                             <Avatar src={row.user.image} name={name} size={32} />
-                          )}
+                          </MaybeLink>
                         </td>
                         <td className="px-3 py-2.5">
-                          {href ? (
-                            <Link href={href} className="hover:text-indigo-400 transition">
-                              <span className="font-pixel text-[10px] text-indigo-400 mr-2">
-                                {String(i + 1).padStart(2, "0")}
-                              </span>
-                              <span className="font-medium">{name}</span>
-                              {mine && (
-                                <span className="ml-2 font-pixel text-[9px] text-indigo-400">· YOU</span>
-                              )}
-                            </Link>
-                          ) : (
-                            <>
-                              <span className="font-pixel text-[10px] text-indigo-400 mr-2">
-                                {String(i + 1).padStart(2, "0")}
-                              </span>
-                              <span className="font-medium">{name}</span>
-                              {mine && (
-                                <span className="ml-2 font-pixel text-[9px] text-indigo-400">· YOU</span>
-                              )}
-                            </>
-                          )}
+                          <MaybeLink href={href} className="hover:text-indigo-400 transition">
+                            <span className="font-pixel text-[10px] text-indigo-400 mr-2">
+                              {String(i + 1).padStart(2, "0")}
+                            </span>
+                            <span className="font-medium">{name}</span>
+                            {mine && (
+                              <span className="ml-2 font-pixel text-[9px] text-indigo-400">· YOU</span>
+                            )}
+                          </MaybeLink>
                         </td>
                         <td className="px-3 py-2.5 text-right text-zinc-400 font-mono tabular-nums">
                           {row.success ? `${seconds}s` : "—"}
