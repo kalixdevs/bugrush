@@ -86,7 +86,15 @@ export default function AuthNav() {
               <MenuLink href="/admin" icon="⚙" label="Admin" onClick={() => setOpen(false)} accent="amber" />
             )}
             <MenuLink href="/profile" icon="⚙" label="Settings" onClick={() => setOpen(false)} />
-            <MenuLink href="/achievements" icon="🏆" label="Achievements" onClick={() => setOpen(false)} />
+            <MenuLink
+              href="/achievements"
+              icon={
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src="/icons/trophy.svg" alt="" className="w-5 h-5 object-contain" />
+              }
+              label="Achievements"
+              onClick={() => setOpen(false)}
+            />
             <MenuLink href="/redeem" icon="🎟" label="Codes" onClick={() => setOpen(false)} />
             <MenuLink href="/support" icon="🎧" label="Support" onClick={() => setOpen(false)} />
             <div className="border-t-2 border-zinc-800 mt-1 pt-1">
@@ -116,7 +124,7 @@ function MenuLink({
   href, icon, label, onClick, accent,
 }: {
   href: string;
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   onClick?: () => void;
   accent?: "amber";
