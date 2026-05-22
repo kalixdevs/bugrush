@@ -40,6 +40,10 @@ export const auth = betterAuth({
     accountLinking: {
       enabled: true,
       trustedProviders: ["google"],
+      // The app has no email-verification flow, so email/password users have
+      // emailVerified = false. Without this, linking a Google account to such
+      // a user fails with account_not_linked.
+      requireLocalEmailVerified: false,
     },
   },
   secret: process.env.BETTER_AUTH_SECRET,
