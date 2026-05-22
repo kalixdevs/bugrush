@@ -34,6 +34,9 @@ export const auth = betterAuth({
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      // Don't copy the player's real name from Google — it would show
+      // publicly. user.create.after backfills name with the handle.
+      mapProfileToUser: () => ({ name: "" }),
     },
   },
   account: {
@@ -67,9 +70,13 @@ export const auth = betterAuth({
           try {
             const seed = user.name || user.email.split("@")[0] || "player";
             const handle = await generateUniqueHandle(seed, prisma);
+            const data: { handle: string; name?: string } = { handle };
+            // Google signups arrive with a blanked name (see mapProfileToUser) —
+            // use the anonymous handle as the display name, not the real name.
+            if (!user.name || user.name.trim() === "") data.name = handle;
             await prisma.user.update({
               where: { id: user.id },
-              data: { handle },
+              data,
             });
           } catch {
             // Never block signup on handle generation.
