@@ -14,7 +14,7 @@ export default function AuthForm({ mode }: Props) {
   const destination =
     nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
       ? nextParam
-      : "/play";
+      : "/home";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
