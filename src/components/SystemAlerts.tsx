@@ -47,7 +47,7 @@ export default function SystemAlerts() {
   const current = alerts[idx % alerts.length];
 
   return (
-    <div className="border-b border-zinc-900 bg-zinc-950/80 backdrop-blur">
+    <div className="site-chrome border-b border-zinc-900 bg-zinc-950/80 backdrop-blur">
       <div className="max-w-7xl mx-auto px-6 h-7 flex items-center justify-center gap-3 text-[10px] font-pixel tracking-widest text-zinc-500">
         <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse flex-shrink-0" />
         <span className="text-indigo-300 truncate">{current}</span>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import HideChrome from "@/components/HideChrome";
 
 export const metadata = { title: "Not found — Bugrush" };
 
@@ -6,6 +7,7 @@ export const metadata = { title: "Not found — Bugrush" };
 export default function NotFound() {
   return (
     <div className="min-h-[70vh] grid place-items-center px-6 text-zinc-100">
+      <HideChrome />
       <div className="w-full max-w-md border-2 border-zinc-800 bg-zinc-900 p-8 text-center">
         <div className="font-mono text-xs text-indigo-400">{"// 404"}</div>
         <h1 className="font-pixel text-3xl mt-3">PAGE NOT FOUND</h1>

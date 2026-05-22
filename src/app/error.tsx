@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import HideChrome from "@/components/HideChrome";
 
 /**
  * Route-segment error boundary. Catches any uncaught error thrown while
@@ -21,6 +22,7 @@ export default function Error({
 
   return (
     <div className="min-h-[70vh] grid place-items-center px-6 text-zinc-100">
+      <HideChrome />
       <div className="w-full max-w-md border-2 border-zinc-800 bg-zinc-900 p-8 text-center">
         <div className="font-mono text-xs text-fuchsia-400">{"// error"}</div>
         <h1 className="font-pixel text-2xl mt-3">SOMETHING BROKE</h1>

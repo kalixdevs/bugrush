@@ -511,7 +511,7 @@ export default function ChatDock() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-4 left-4 z-50 btn-press px-3 py-2 font-pixel text-[10px] border-2 border-zinc-950 bg-indigo-500 text-zinc-950"
+        className="site-chrome fixed bottom-4 left-4 z-50 btn-press px-3 py-2 font-pixel text-[10px] border-2 border-zinc-950 bg-indigo-500 text-zinc-950"
         title="Show chat"
       >
         ▶ CHAT
@@ -536,10 +536,10 @@ export default function ChatDock() {
     <>
       <div
         onClick={() => setOpen(false)}
-        className="fixed inset-0 z-30 bg-zinc-950/70 backdrop-blur-sm lg:hidden"
+        className="site-chrome fixed inset-0 z-30 bg-zinc-950/70 backdrop-blur-sm lg:hidden"
         aria-hidden="true"
       />
-      <aside className="fixed left-0 top-0 bottom-0 z-40 w-full sm:w-80 lg:w-72 border-r-2 border-zinc-800 bg-zinc-950 flex flex-col">
+      <aside className="site-chrome fixed left-0 top-0 bottom-0 z-40 w-full sm:w-80 lg:w-72 border-r-2 border-zinc-800 bg-zinc-950 flex flex-col">
         <div className="px-4 py-3 border-b-2 border-zinc-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h2 className="font-pixel text-sm text-zinc-100">Chat</h2>

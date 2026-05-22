@@ -134,6 +134,10 @@
 
 body.in-round .rain { display: none; }
 
+/* Error / 404 screens: strip all site chrome, keep the background animation. */
+body.chrome-off .site-chrome { display: none !important; }
+body.chrome-off { padding-left: 0 !important; }
+
 /* When chat dock is open, shift everything right of it so content isn't covered.
    Dock = w-72 (18rem). */
 @media (min-width: 1024px) {

@@ -35,7 +35,7 @@ export default function TopStrip() {
   if (shouldHide(pathname) || inRound) return null;
 
   return (
-    <nav className="border-b-2 border-zinc-800 bg-zinc-950">
+    <nav className="site-chrome border-b-2 border-zinc-800 bg-zinc-950">
       <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
         <Link href="/home" className="font-pixel text-indigo-400 text-xs tracking-widest">
           BUGRUSH
