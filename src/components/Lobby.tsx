@@ -3,18 +3,25 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LANGUAGES, challenges, type PlayableLanguage } from "@/lib/challenges";
-import { useGame, type RoundConfig, type RoundDifficulty } from "@/lib/store";
+import { traceChallenges } from "@/lib/traceChallenges";
+import { useGame, type RoundConfig, type RoundDifficulty, type GameMode } from "@/lib/store";
 import { sfx } from "@/lib/sfx";
 import AuthNav from "./AuthNav";
 
 const LS_KEY = "devrace:lastConfig";
 
 const DEFAULT_CONFIG: RoundConfig = {
+  mode: "fix",
   languages: ["javascript", "python"],
   difficulty: "normal",
   roundSeconds: 60,
   solveCap: null,
 };
+
+const MODES: Array<{ id: GameMode; label: string; sub: string }> = [
+  { id: "fix",   label: "FIX BUGS",     sub: "patch broken code" },
+  { id: "trace", label: "TRACE OUTPUT", sub: "predict the printed output" },
+];
 
 const DIFFICULTY_TIERS: Array<{
   id: RoundDifficulty;
@@ -47,11 +54,12 @@ function loadConfig(): RoundConfig {
   try {
     const raw = window.localStorage.getItem(LS_KEY);
     if (!raw) return DEFAULT_CONFIG;
-    const parsed = JSON.parse(raw) as RoundConfig;
+    const parsed = JSON.parse(raw) as Partial<RoundConfig>;
     if (!Array.isArray(parsed.languages) || parsed.languages.length === 0) {
       return DEFAULT_CONFIG;
     }
-    return parsed;
+    // Backfill mode for configs persisted before TRACE was added.
+    return { ...DEFAULT_CONFIG, ...(parsed as RoundConfig), mode: parsed.mode ?? "fix" };
   } catch {
     return DEFAULT_CONFIG;
   }
@@ -101,8 +109,11 @@ export default function Lobby() {
 
   const pickCap = (v: number | null) => setCfg((c) => ({ ...c, solveCap: v }));
 
+  const pickMode = (m: GameMode) => setCfg((c) => ({ ...c, mode: m }));
+
   const effectiveDiff = cfg.difficulty === "hardcore" ? "hard" : cfg.difficulty;
-  const poolSize = challenges.filter(
+  const pool = cfg.mode === "trace" ? traceChallenges : challenges;
+  const poolSize = pool.filter(
     (c) => cfg.languages.includes(c.language) && c.difficulty === effectiveDiff,
   ).length;
 
@@ -145,6 +156,29 @@ export default function Lobby() {
         <p className="text-zinc-400 text-sm mb-10">
           Pick your stack and how brutal you want it.
         </p>
+
+        <Section title="MODE">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {MODES.map((m) => {
+              const selected = cfg.mode === m.id;
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => pickMode(m.id)}
+                  className={`relative border-2 px-3 py-3 text-left transition ${
+                    selected
+                      ? "border-indigo-500 bg-indigo-500 text-zinc-950"
+                      : "border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-zinc-600"
+                  }`}
+                >
+                  <div className="font-pixel text-xs">{m.label}</div>
+                  <div className="font-pixel text-[8px] mt-2 opacity-90">{m.sub}</div>
+                </button>
+              );
+            })}
+          </div>
+        </Section>
 
         <Section title="LANGUAGE" hint="Pick one or more">
           <div className="flex flex-wrap gap-2">
@@ -247,7 +281,8 @@ export default function Lobby() {
           )}
           {emptyPool && (
             <p className="text-xs text-fuchsia-400 mt-3 max-w-sm text-center">
-              No {cfg.difficulty === "hardcore" ? "hard" : cfg.difficulty} challenges available for your language pick yet. Try a different difficulty or add JS.
+              No {cfg.difficulty === "hardcore" ? "hard" : cfg.difficulty}{" "}
+              {cfg.mode === "trace" ? "trace" : "fix"} problems for your language pick yet. Try a different difficulty or another language.
             </p>
           )}
           {cfg.difficulty === "hardcore" && (

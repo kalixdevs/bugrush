@@ -34,11 +34,15 @@ function randomFood(snake: Pt[]): Pt {
 export default function NotFoundGame() {
   const [game, setGame] = useState<Game>(INITIAL);
   const [status, setStatus] = useState<Status>("idle");
-  const [best, setBest] = useState<number>(() => {
-    if (typeof window === "undefined") return 0;
+  // Hydrated from localStorage post-mount to avoid SSR mismatch — initial
+  // render outputs BEST 0 on both server and client; the effect below
+  // updates it once mounted.
+  const [best, setBest] = useState<number>(0);
+  useEffect(() => {
     const v = Number(window.localStorage.getItem(LS_BEST));
-    return Number.isFinite(v) && v > 0 ? v : 0;
-  });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (Number.isFinite(v) && v > 0) setBest(v);
+  }, []);
 
   const gameRef = useRef(game);
   const statusRef = useRef(status);

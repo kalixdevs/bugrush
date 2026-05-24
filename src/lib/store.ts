@@ -7,13 +7,16 @@ import {
   type Difficulty,
   type PlayableLanguage,
 } from "./challenges";
-import { isCorrect } from "./validate";
+import { traceChallenges, type TraceChallenge } from "./traceChallenges";
+import { isCorrect, matchOutput } from "./validate";
 import { recordRun, fetchPersonalBest } from "./api";
 import { sfx } from "./sfx";
 
 export type RoundDifficulty = Difficulty | "hardcore";
+export type GameMode = "fix" | "trace";
 
 export type RoundConfig = {
+  mode: GameMode;              // "fix" = solve bugs, "trace" = predict output
   languages: PlayableLanguage[];
   difficulty: RoundDifficulty;
   roundSeconds: number | null; // null = practice
@@ -24,12 +27,39 @@ export type EndReason = "time" | "manual" | "cap" | "hardcore-fail" | null;
 
 type Status = "idle" | "playing" | "finished";
 
+export type Problem =
+  | { kind: "fix"; challenge: Challenge }
+  | { kind: "trace"; trace: TraceChallenge };
+
+/** Normalised fields shared by both problem kinds — for read-only UI access. */
+export function problemView(p: Problem): {
+  id: string;
+  title: string;
+  language: PlayableLanguage;
+  hint: string | null;
+} {
+  if (p.kind === "fix") {
+    return {
+      id: p.challenge.id,
+      title: p.challenge.title,
+      language: p.challenge.language,
+      hint: p.challenge.hint,
+    };
+  }
+  return {
+    id: p.trace.id,
+    title: p.trace.title,
+    language: p.trace.language,
+    hint: null,
+  };
+}
+
 type State = {
   status: Status;
   config: RoundConfig | null;
-  queue: Challenge[];
-  current: Challenge | null;
-  failedOn: Challenge | null;
+  queue: Problem[];
+  current: Problem | null;
+  failedOn: Problem | null;
   draft: string;
   score: number;
   solves: number;
@@ -63,11 +93,20 @@ function shuffled<T>(xs: T[]): T[] {
   return a;
 }
 
-function filterFor(cfg: RoundConfig): Challenge[] {
+function filterFor(cfg: RoundConfig): Problem[] {
   const diff: Difficulty = cfg.difficulty === "hardcore" ? "hard" : cfg.difficulty;
-  return challenges.filter(
-    (c) => cfg.languages.includes(c.language) && c.difficulty === diff,
-  );
+  if (cfg.mode === "trace") {
+    return traceChallenges
+      .filter((c) => cfg.languages.includes(c.language) && c.difficulty === diff)
+      .map((trace) => ({ kind: "trace" as const, trace }));
+  }
+  return challenges
+    .filter((c) => cfg.languages.includes(c.language) && c.difficulty === diff)
+    .map((challenge) => ({ kind: "fix" as const, challenge }));
+}
+
+function initialDraft(p: Problem): string {
+  return p.kind === "fix" ? p.challenge.broken : "";
 }
 
 function finishSideEffects(
@@ -123,7 +162,7 @@ export const useGame = create<State & Actions>((set, get) => ({
       queue: rest,
       current: first,
       failedOn: null,
-      draft: first.broken,
+      draft: initialDraft(first),
       score: 0,
       solves: 0,
       timeLeft: cfg.roundSeconds ?? 0,
@@ -141,7 +180,12 @@ export const useGame = create<State & Actions>((set, get) => ({
     const { current, draft, queue, score, solves, timeLeft, config } = get();
     if (!current || !config) return;
 
-    if (!isCorrect(draft, current.solution)) {
+    const correct =
+      current.kind === "fix"
+        ? isCorrect(draft, current.challenge.solution)
+        : matchOutput(draft, current.trace.expectedOutput);
+
+    if (!correct) {
       if (config.difficulty === "hardcore") {
         set({
           status: "finished",
@@ -195,7 +239,7 @@ export const useGame = create<State & Actions>((set, get) => ({
       solves: nextSolves,
       lastResult: "ok",
       current: next,
-      draft: next.broken,
+      draft: initialDraft(next),
       queue: rest,
     });
     sfx.solve();
@@ -209,7 +253,7 @@ export const useGame = create<State & Actions>((set, get) => ({
     const penalty = config.roundSeconds == null ? 0 : 5;
     set({
       current: next,
-      draft: next.broken,
+      draft: initialDraft(next),
       queue: rest,
       lastResult: null,
       timeLeft: Math.max(0, timeLeft - penalty),

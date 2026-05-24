@@ -14,17 +14,18 @@ const Monaco = dynamic(() => import("@monaco-editor/react"), {
 type Props = {
   value: string;
   language: string;
-  onChange: (v: string) => void;
+  onChange?: (v: string) => void;
+  readOnly?: boolean;
 };
 
-export default function CodeEditor({ value, language, onChange }: Props) {
+export default function CodeEditor({ value, language, onChange, readOnly }: Props) {
   return (
     <Monaco
       height="100%"
       language={language}
       value={value}
       theme="vs-dark"
-      onChange={(v) => onChange(v ?? "")}
+      onChange={readOnly ? undefined : (v) => onChange?.(v ?? "")}
       options={{
         fontSize: 15,
         fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
@@ -37,6 +38,8 @@ export default function CodeEditor({ value, language, onChange }: Props) {
         overviewRulerLanes: 0,
         overviewRulerBorder: false,
         hideCursorInOverviewRuler: true,
+        readOnly,
+        domReadOnly: readOnly,
         scrollbar: {
           vertical: "hidden",
           horizontal: "hidden",

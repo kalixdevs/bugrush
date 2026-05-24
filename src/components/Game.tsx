@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useGame } from "@/lib/store";
+import { useGame, problemView } from "@/lib/store";
 import { useSession } from "@/lib/auth-client";
 import CodeEditor from "./CodeEditor";
 import Lobby from "./Lobby";
 import HintReveal from "./HintReveal";
+import TraceView from "./TraceView";
 
 export default function Game() {
   const {
@@ -90,30 +91,39 @@ export default function Game() {
           </div>
           {endReason === "hardcore-fail" && failedOn && (
             <div className="text-sm text-fuchsia-300 mb-4">
-              Got you: <span className="font-mono">{failedOn.title}</span>
+              Got you: <span className="font-mono">{problemView(failedOn).title}</span>
             </div>
           )}
 
           {(() => {
-            const showBug = failedOn ?? (endReason === "time" || endReason === "hardcore-fail" ? current : null);
-            if (!showBug) return null;
+            const showProblem = failedOn ?? (endReason === "time" || endReason === "hardcore-fail" ? current : null);
+            if (!showProblem) return null;
+            const view = problemView(showProblem);
+            const isFix = showProblem.kind === "fix";
             return (
               <div className="mt-6 mb-2 text-left">
                 <div className="font-pixel text-[10px] tracking-widest text-zinc-500 mb-2">
-                  THE BUG · <span className="text-zinc-400">{showBug.title}</span>
+                  {isFix ? "THE BUG" : "THE OUTPUT"} ·{" "}
+                  <span className="text-zinc-400">{view.title}</span>
                 </div>
-                <p className="text-xs text-zinc-500 mb-3 font-mono">{showBug.hint}</p>
+                {view.hint && (
+                  <p className="text-xs text-zinc-500 mb-3 font-mono">{view.hint}</p>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <div className="font-pixel text-[9px] tracking-widest text-fuchsia-400 mb-1">BROKEN</div>
+                    <div className="font-pixel text-[9px] tracking-widest text-fuchsia-400 mb-1">
+                      {isFix ? "BROKEN" : "CODE"}
+                    </div>
                     <pre className="border-2 border-fuchsia-500/40 bg-zinc-950 p-2 sm:p-3 text-[10px] sm:text-[11px] leading-snug font-mono text-zinc-200 overflow-x-auto whitespace-pre">
-{showBug.broken}
+{showProblem.kind === "fix" ? showProblem.challenge.broken : showProblem.trace.code}
                     </pre>
                   </div>
                   <div>
-                    <div className="font-pixel text-[9px] tracking-widest text-emerald-400 mb-1">FIX</div>
+                    <div className="font-pixel text-[9px] tracking-widest text-emerald-400 mb-1">
+                      {isFix ? "FIX" : "EXPECTED"}
+                    </div>
                     <pre className="border-2 border-emerald-500/40 bg-zinc-950 p-2 sm:p-3 text-[10px] sm:text-[11px] leading-snug font-mono text-zinc-200 overflow-x-auto whitespace-pre">
-{showBug.solution}
+{showProblem.kind === "fix" ? showProblem.challenge.solution : showProblem.trace.expectedOutput}
                     </pre>
                   </div>
                 </div>
@@ -164,6 +174,8 @@ export default function Game() {
   }
 
   if (!current) return null;
+  const view = problemView(current);
+  const isFix = current.kind === "fix";
 
   const timeColor =
     timeLeft <= 10 ? "text-red-400" : timeLeft <= 20 ? "text-amber-400" : "text-indigo-400";
@@ -171,6 +183,7 @@ export default function Game() {
   const isHardcore = config?.difficulty === "hardcore";
   const penaltyLabel = isTimed ? "Skip (−5s)" : "Skip";
   const badTimeLabel = isTimed ? "Not quite — −3s." : "Not quite.";
+  const okLabel = isFix ? "Fixed. Next bug loaded." : "Correct. Next snippet loaded.";
 
   return (
     <div className="h-full bg-zinc-950 text-zinc-100 flex flex-col overflow-hidden">
@@ -206,14 +219,20 @@ export default function Game() {
       </header>
 
       <section className="px-6 py-4 border-b-2 border-zinc-800 bg-zinc-950">
-        <div className="text-lg font-medium">{current.title}</div>
-        <HintReveal text={current.hint} free={!isTimed} resetKey={current.id} onReveal={bumpHints} />
+        <div className="text-lg font-medium">{view.title}</div>
+        {isFix && view.hint && (
+          <HintReveal text={view.hint} free={!isTimed} resetKey={view.id} onReveal={bumpHints} />
+        )}
       </section>
 
       <main className="flex-1 min-h-0 relative">
-        <div className="absolute inset-0">
-          <CodeEditor value={draft} language={current.language} onChange={setDraft} />
-        </div>
+        {current.kind === "fix" ? (
+          <div className="absolute inset-0">
+            <CodeEditor value={draft} language={view.language} onChange={setDraft} />
+          </div>
+        ) : (
+          <TraceView trace={current.trace} draft={draft} onChange={setDraft} onSubmit={submit} />
+        )}
       </main>
 
       <footer className="border-t-2 border-zinc-800 px-6 py-3 flex items-center justify-between bg-zinc-950">
@@ -222,7 +241,7 @@ export default function Game() {
             <span className="text-fuchsia-400">{badTimeLabel}</span>
           )}
           {lastResult === "ok" && (
-            <span className="text-indigo-400">Fixed. Next bug loaded.</span>
+            <span className="text-indigo-400">{okLabel}</span>
           )}
         </div>
         <div className="flex gap-2">
