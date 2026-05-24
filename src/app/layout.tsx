@@ -10,6 +10,7 @@ import EventBanner from "@/components/EventBanner";
 import TopStrip from "@/components/TopStrip";
 import SystemAlerts from "@/components/SystemAlerts";
 import BrowserNotifBridge from "@/components/BrowserNotifBridge";
+import TauriTitleBar from "@/components/TauriTitleBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,6 +44,7 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${pressStart.variable} h-full antialiased`}
     >
       <body className="h-screen overflow-hidden antialiased bg-zinc-950 bg-grid text-zinc-100 flex flex-col">
+        <TauriTitleBar />
         <CodeRain />
         <MeProvider>
           <EventBanner />

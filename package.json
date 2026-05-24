@@ -7,11 +7,16 @@
     "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "tauri:icon": "tauri icon src/app/icon.svg"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "@prisma/client": "^6.19.3",
+    "@tauri-apps/api": "^2",
     "@upstash/redis": "^1.38.0",
     "@vercel/blob": "^2.3.3",
     "better-auth": "^1.6.11",
@@ -24,6 +29,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@tauri-apps/cli": "^2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

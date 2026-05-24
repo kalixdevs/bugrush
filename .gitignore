@@ -43,3 +43,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# tauri — Rust build artifacts + generated icon set
+/src-tauri/target
+/src-tauri/gen
+/src-tauri/icons
