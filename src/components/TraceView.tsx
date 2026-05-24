@@ -21,11 +21,13 @@ export default function TraceView({ trace, draft, onChange, onSubmit }: Props) {
 
   return (
     <div className="absolute inset-0 grid grid-rows-[1fr_auto] md:grid-rows-1 md:grid-cols-2">
-      <div className="relative border-b-2 md:border-b-0 md:border-r-2 border-zinc-800 min-h-0">
-        <div className="absolute top-2 left-3 z-10 font-pixel text-[9px] tracking-widest text-zinc-500 pointer-events-none">
+      <div className="flex flex-col border-b-2 md:border-b-0 md:border-r-2 border-zinc-800 min-h-0">
+        <div className="px-4 pt-3 pb-2 font-pixel text-[9px] tracking-widest text-zinc-500">
           SNIPPET
         </div>
-        <CodeEditor value={trace.code} language={trace.language} readOnly />
+        <div className="flex-1 min-h-0 relative">
+          <CodeEditor value={trace.code} language={trace.language} readOnly />
+        </div>
       </div>
       <div className="flex flex-col bg-zinc-950 min-h-0">
         <div className="px-4 pt-3 pb-2 font-pixel text-[9px] tracking-widest text-indigo-400 flex items-center justify-between">
