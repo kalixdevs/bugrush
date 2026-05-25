@@ -90,7 +90,7 @@ export default function AuthNav() {
               href="/achievements"
               icon={
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src="/icons/trophy.svg" alt="" className="w-5 h-5 object-contain" />
+                <img src="/icons/trophy.svg" alt="" className="w-8 h-8 object-contain -my-2" />
               }
               label="Achievements"
               onClick={() => setOpen(false)}
