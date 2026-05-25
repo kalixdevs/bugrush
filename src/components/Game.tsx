@@ -1,21 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useGame, problemView } from "@/lib/store";
-import { useSession } from "@/lib/auth-client";
 import CodeEditor from "./CodeEditor";
 import Lobby from "./Lobby";
 import HintReveal from "./HintReveal";
 import TraceView from "./TraceView";
+import RoundResult from "./RoundResult";
 
 export default function Game() {
   const {
-    status, config, current, failedOn, draft, score, solves, timeLeft,
-    lastResult, endReason, personalBest, isNewBest,
-    setDraft, submit, skip, tick, endRound, toLobby, reset, bumpHints,
+    status, config, current, draft, score, solves, timeLeft,
+    lastResult,
+    setDraft, submit, skip, tick, endRound, bumpHints,
   } = useGame();
-  const { data: session } = useSession();
 
   const [confirmEnd, setConfirmEnd] = useState(false);
   const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -65,112 +63,7 @@ export default function Game() {
   }
 
   if (status === "finished") {
-    const showNewBest = isNewBest && session?.user;
-    const headline =
-      showNewBest ? "HIGH SCORE"
-      : endReason === "hardcore-fail" ? "ELIMINATED"
-      : endReason === "cap" ? "ROUND COMPLETE"
-      : endReason === "manual" ? "ROUND ENDED"
-      : "TIME'S UP";
-    const headlineColor =
-      showNewBest ? "text-amber-400"
-      : endReason === "hardcore-fail" ? "text-fuchsia-500"
-      : "text-zinc-400";
-    return (
-      <div className="min-h-screen grid place-items-center text-zinc-100 py-8">
-        <div className="text-center px-6 max-w-2xl border-2 border-zinc-800 bg-zinc-900 py-10">
-          <div className={`font-pixel text-base sm:text-lg mb-6 leading-relaxed ${headlineColor}`}>
-            {headline}
-          </div>
-          <div className="font-mono text-6xl font-bold mb-3 tabular-nums">{score}</div>
-          <div className="text-zinc-400 mb-2 text-sm">
-            {solves} bug{solves === 1 ? "" : "s"} squashed
-            {endReason === "cap" && config?.solveCap
-              ? ` · cleared ${config.solveCap}`
-              : ""}
-          </div>
-          {endReason === "hardcore-fail" && failedOn && (
-            <div className="text-sm text-fuchsia-300 mb-4">
-              Got you: <span className="font-mono">{problemView(failedOn).title}</span>
-            </div>
-          )}
-
-          {(() => {
-            const showProblem = failedOn ?? (endReason === "time" || endReason === "hardcore-fail" ? current : null);
-            if (!showProblem) return null;
-            const view = problemView(showProblem);
-            const isFix = showProblem.kind === "fix";
-            return (
-              <div className="mt-6 mb-2 text-left">
-                <div className="font-pixel text-[10px] tracking-widest text-zinc-500 mb-2">
-                  {isFix ? "THE BUG" : "THE OUTPUT"} ·{" "}
-                  <span className="text-zinc-400">{view.title}</span>
-                </div>
-                {view.hint && (
-                  <p className="text-xs text-zinc-500 mb-3 font-mono">{view.hint}</p>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <div className="font-pixel text-[9px] tracking-widest text-fuchsia-400 mb-1">
-                      {isFix ? "BROKEN" : "CODE"}
-                    </div>
-                    <pre className="border-2 border-fuchsia-500/40 bg-zinc-950 p-2 sm:p-3 text-[10px] sm:text-[11px] leading-snug font-mono text-zinc-200 overflow-x-auto whitespace-pre">
-{showProblem.kind === "fix" ? showProblem.challenge.broken : showProblem.trace.code}
-                    </pre>
-                  </div>
-                  <div>
-                    <div className="font-pixel text-[9px] tracking-widest text-emerald-400 mb-1">
-                      {isFix ? "FIX" : "EXPECTED"}
-                    </div>
-                    <pre className="border-2 border-emerald-500/40 bg-zinc-950 p-2 sm:p-3 text-[10px] sm:text-[11px] leading-snug font-mono text-zinc-200 overflow-x-auto whitespace-pre">
-{showProblem.kind === "fix" ? showProblem.challenge.solution : showProblem.trace.expectedOutput}
-                    </pre>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-
-          {session?.user ? (
-            <div className="text-sm text-zinc-400 mt-3">
-              {isNewBest ? (
-                <span className="font-pixel text-[11px] text-amber-400">★ NEW PERSONAL BEST</span>
-              ) : personalBest != null ? (
-                <>Personal best: <span className="text-zinc-200 tabular-nums font-mono">{personalBest}</span></>
-              ) : null}
-            </div>
-          ) : (
-            <div className="text-sm text-zinc-400 mt-3">
-              <Link href="/signup" className="text-indigo-400 hover:text-indigo-300">
-                Sign up
-              </Link>{" "}
-              to save runs and hit the leaderboard.
-            </div>
-          )}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href="/home"
-              onClick={reset}
-              className="px-4 py-2 font-pixel text-[10px] border-2 border-zinc-700 bg-zinc-950 text-zinc-300 hover:border-zinc-500 transition"
-            >
-              ← HOME
-            </Link>
-            <button
-              onClick={toLobby}
-              className="px-4 py-2 font-pixel text-[10px] border-2 border-zinc-700 bg-zinc-950 text-zinc-300 hover:border-zinc-500 transition"
-            >
-              SETTINGS
-            </button>
-            <button
-              onClick={() => config && useGame.getState().start(config)}
-              className="btn-press px-5 py-2 font-pixel text-[10px] bg-indigo-500 text-zinc-950 border-2 border-zinc-950"
-            >
-              ▶ PLAY AGAIN
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+    return <RoundResult />;
   }
 
   if (!current) return null;
